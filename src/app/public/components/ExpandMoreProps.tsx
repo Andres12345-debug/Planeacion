@@ -35,11 +35,10 @@ interface ExpandMoreProps extends React.ComponentProps<typeof IconButton> {
   expand?: boolean;
 }
 
-// Styled expand button (prevenir prop `expand` al DOM)
 const ExpandMore = styled((props: ExpandMoreProps) => {
   const { expand, ...other } = props;
   return <IconButton {...other} />;
-})(({ theme, expand }: { theme?: any; expand?: boolean }) => ({
+})(({ theme, expand }) => ({
   marginLeft: "auto",
   transform: expand ? "rotate(180deg)" : "rotate(0deg)",
   transition: theme.transitions.create("transform", {
@@ -47,19 +46,9 @@ const ExpandMore = styled((props: ExpandMoreProps) => {
   }),
 }));
 
-// Small reusable placeholder image (you can replace)
 const FALLBACK_IMAGE = "https://picsum.photos/800/450?blur=2";
 
-/**
- * SingleCard: tarjeta independiente y configurable
- */
-function SingleCard({
-  item,
-  onClick,
-}: {
-  item: CardItem;
-  onClick?: (item: CardItem) => void;
-}) {
+function SingleCard({ item, onClick }: { item: CardItem; onClick?: (item: CardItem) => void }) {
   const theme = useTheme();
   const [expanded, setExpanded] = React.useState(false);
 
@@ -70,45 +59,36 @@ function SingleCard({
         width: { xs: "100%", sm: 340 },
         borderRadius: 3,
         overflow: "hidden",
-        bgcolor: theme.palette.mode === "dark" ? "grey.900" : "common.white",
+        bgcolor: theme.palette.mode === "dark" ? "grey.900" : "white",
         transition: "transform 300ms ease, box-shadow 300ms ease",
         "&:hover": {
           transform: "translateY(-8px) rotate(-0.5deg)",
           boxShadow: 8,
         },
-        display: "flex",
-        flexDirection: "column",
       }}
     >
-      <CardActionArea
-        onClick={() => onClick?.(item)}
-        sx={{ display: "block", textAlign: "left" }}
-        aria-label={`Abrir ${item.title}`}
-      >
+      <CardActionArea onClick={() => onClick?.(item)} sx={{ display: "block", textAlign: "left" }}>
         <CardHeader
           avatar={
             <Avatar sx={{ bgcolor: "primary.main" }}>
-              {item.avatarLetter ?? item.title?.[0]?.toUpperCase() ?? "A"}
+              {item.avatarLetter ?? item.title[0]}
             </Avatar>
           }
           action={
             <Tooltip title="Opciones">
-              <IconButton aria-label={`Opciones de ${item.title}`}>
+              <IconButton>
                 <MoreVertIcon />
               </IconButton>
             </Tooltip>
           }
           title={
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: 700, lineHeight: 1.1 }}
-            >
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               {item.title}
             </Typography>
           }
           subheader={
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              {item.date ?? "Fecha no disponible"}
+            <Typography variant="caption" sx={{ color: "text.primary" }}>
+              {item.date}
             </Typography>
           }
         />
@@ -119,42 +99,33 @@ function SingleCard({
           alt={item.title}
           height="194"
           loading="lazy"
-          sx={{
-            width: "100%",
-            height: 194,
-            objectFit: "cover",
-            display: "block",
-          }}
+          sx={{ objectFit: "cover" }}
         />
 
         <CardContent>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            {item.excerpt ??
-              "Aquí va una descripción breve que resuma el contenido de la tarjeta."}
+          <Typography variant="body2" sx={{ color: "text.primary" }}>
+            {item.excerpt}
           </Typography>
         </CardContent>
       </CardActionArea>
 
-      <Box sx={{ flexGrow: 1 }} />
-
       <CardActions disableSpacing sx={{ px: 2 }}>
         <Tooltip title="Agregar a favoritos">
-          <IconButton aria-label={`Guardar ${item.title} como favorito`}>
+          <IconButton>
             <FavoriteIcon />
           </IconButton>
         </Tooltip>
 
         <Tooltip title="Compartir">
-          <IconButton aria-label={`Compartir ${item.title}`}>
+          <IconButton>
             <ShareIcon />
           </IconButton>
         </Tooltip>
 
         <ExpandMore
           expand={expanded}
-          onClick={() => setExpanded((s) => !s)}
+          onClick={() => setExpanded(!expanded)}
           aria-expanded={expanded}
-          aria-label={expanded ? "Cerrar más información" : "Abrir más información"}
         >
           <ExpandMoreIcon />
         </ExpandMore>
@@ -163,8 +134,7 @@ function SingleCard({
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <CardContent sx={{ pt: 0 }}>
           <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            {item.details ??
-              "Contenido adicional: aquí puedes ampliar la información relacionada con la tarjeta."}
+            {item.details}
           </Typography>
         </CardContent>
       </Collapse>
@@ -172,10 +142,6 @@ function SingleCard({
   );
 }
 
-/**
- * ThreeCards: contenedor responsivo para un conjunto de tarjetas.
- * Puedes pasar `items` si quieres reutilizarlo con otros datos.
- */
 export default function ThreeCards({
   items,
   onCardClick,
@@ -183,50 +149,52 @@ export default function ThreeCards({
   items?: CardItem[];
   onCardClick?: (item: CardItem) => void;
 }) {
-  // default items si no se pasan por props
   const defaultItems: CardItem[] = [
     {
       id: 1,
-      title: "Card 1",
-      date: "Septiembre 2025",
-      image: "https://picsum.photos/640/360?random=11",
-      excerpt:
-        "Este es un texto de ejemplo para la card 1. Aquí puedes agregar la descripción.",
-      details:
-        "Detalle adicional card 1. Más información, enlaces, o pasos a seguir.",
+      title: "Alcaldía tunja",
+      date: "18 Febrero, 2025",
+      image: "https://picsum.photos/640/360?random=1",
+      excerpt: "Todo lo que necesitas saber sobre la Ventanilla Única de Construcción en Tunja",
+      details: "Contenido extendido de la tarjeta 1.",
     },
     {
       id: 2,
-      title: "Card 2",
-      date: "Septiembre 2025",
-      image: "https://picsum.photos/640/360?random=22",
-      excerpt:
-        "Este es un texto de ejemplo para la card 2. Aquí puedes agregar la descripción.",
-      details: "Detalle adicional card 2.",
+      title: "Alcaldía tunja",
+      date: "18 Febrero, 2025",
+      image: "https://picsum.photos/640/360?random=2",
+      excerpt: "¿Qué impacto tendrá la VUC-i en el desarrollo urbano de Tunja?",
+      details: "Contenido extendido de la tarjeta 2.",
     },
     {
       id: 3,
-      title: "Card 3",
-      date: "Septiembre 2025",
-      image: "https://picsum.photos/640/360?random=33",
-      excerpt:
-        "Este es un texto de ejemplo para la card 3. Aquí puedes agregar la descripción.",
-      details: "Detalle adicional card 3.",
+      title: "Alcaldía tunja",
+      date: "18 Febrero, 2025",
+      image: "https://picsum.photos/640/360?random=3",
+      excerpt: "Ahorra tiempo y dinero: Ventajas de gestionar tus trámites de construcción en línea con la VUC-i",
+      details: "Contenido extendido de la tarjeta 3.",
     },
   ];
 
   const list = items ?? defaultItems;
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        px: { xs: 2, md: 8 },
-        mt: 6,
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
+    <Box sx={{ width: "100%", px: { xs: 2, md: 8 }, mt: 10 }}>
+      
+      {/* 🔥 TÍTULO Y SUBTÍTULO COMO TUS OTROS COMPONENTES */}
+      <Box sx={{ textAlign: "center", mb: 6 }}>
+        <Typography
+          variant="h3"
+              sx={{
+                fontWeight: 700,
+                mb: 2
+              }}
+        >
+          Noticias
+        </Typography>
+      </Box>
+
+      {/* GRID DE CARDS */}
       <Box
         sx={{
           display: "grid",
@@ -238,6 +206,7 @@ export default function ThreeCards({
           },
           width: "100%",
           maxWidth: 1200,
+          mx: "auto",
         }}
       >
         {list.map((item) => (
