@@ -28,14 +28,12 @@ export const MainRoute = () => {
         <Routes>
             {/* Layout principal con menú */}
             <Route path="/" element={<MainLayout />}>
+                <Route path="/login" element={<LazySesion />} />
+                <Route path="/perfil" element={<LazyProfile />} />
                 {/* ruta index */}
                 <Route index element={<LazyWelcome />} />
                 {/* otras rutas dentro del layout */}
             </Route>
-
-            <Route path="/login" element={<LazySesion />} />
-            <Route path="/perfil" element={<LazyProfile />} />
-
             {/* fallback para rutas no encontradas */}
             <Route path="*" element={<LazyError />} />
         </Routes>

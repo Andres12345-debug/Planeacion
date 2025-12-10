@@ -226,7 +226,7 @@ export default function ImageCarousel({
             >
               {s.title && (
                 <Typography
-                  component="h2"
+                  component="h1"
                   variant="h4"
                   sx={{
                     fontWeight: 800,

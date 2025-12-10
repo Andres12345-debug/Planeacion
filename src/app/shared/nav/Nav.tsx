@@ -88,7 +88,7 @@ export default function TopNavigation() {
 
   // Nav links
   const navLinks = [
-    { label: "INICIO", to: "/land" },
+    { label: "INICIO", to: "/" },
     { label: "QUIÉNES SOMOS", to: "/quienes-somos" },
     { label: "TRÁMITES", to: "/tramites" },
     { label: "BLOG", to: "/blog" },
@@ -127,7 +127,7 @@ export default function TopNavigation() {
 
           {/* Logo */}
           <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
-            <Link to="/land" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+            <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
               <Box
                 component="img"
                 src={logo}
