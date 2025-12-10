@@ -2,9 +2,13 @@
 import { AppBar, Toolbar, Box, IconButton, Button, Typography } from "@mui/material";
 import LanguageIcon from "@mui/icons-material/Language";
 import logo from '../../../assets/img/nav/gov.com.co.png';
+import { useThemeContext } from "../theme/ThemeConext";
+import { DarkMode, LightMode, Menu as MenuIcon, Close as CloseIcon } from "@mui/icons-material";
 
 
 export default function Navbar() {
+  const { mode, toggleTheme } = useThemeContext();
+
   return (
     <AppBar
       position="fixed"
@@ -17,7 +21,7 @@ export default function Navbar() {
     >
       <Toolbar variant="dense" sx={{ minHeight: 48 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <img src={logo} alt="Logo" style={{ width: 110, height: 50}} />
+          <img src={logo} alt="Logo" style={{ width: 110, height: 50 }} />
         </Box>
 
         <Box sx={{ marginLeft: "auto" }}>
@@ -29,6 +33,11 @@ export default function Navbar() {
           >
             ES
           </Button>
+          {/* Theme toggle */}
+          <IconButton onClick={toggleTheme} color="inherit" sx={{ ml: 0.5 }}>
+            {mode === "light" ? <DarkMode /> : <LightMode />}
+          </IconButton>
+
         </Box>
       </Toolbar>
     </AppBar>

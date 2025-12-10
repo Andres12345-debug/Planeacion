@@ -200,11 +200,6 @@ export default function TopNavigation() {
                 <SearchIcon />
               </IconButton>
             )}
-
-            {/* Theme toggle */}
-            <IconButton onClick={toggleTheme} color="inherit" sx={{ ml: 0.5 }}>
-              {mode === "light" ? <DarkMode /> : <LightMode />}
-            </IconButton>
             {/* Botón ir al perfil */}
             <IconButton
               component={Link}
