@@ -185,12 +185,13 @@ export default function ThreeCards({
   const list = items ?? defaultItems;
 
   return (
-    <Box sx={{ width: "100%", px: { xs: 2, md: 8 }, mt: 10 }}>
+    <Box sx={{ width: "100%", px: { xs: 2, md: 8 } }}>
       {/* 🔥 TÍTULO */}
       <Box sx={{ textAlign: "center", mb: 6 }}>
         <Typography
           variant="h3"
           sx={{
+            py: 8,
             fontWeight: 700,
             mb: 2,
           }}

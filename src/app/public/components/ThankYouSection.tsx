@@ -21,7 +21,7 @@ import Turismo from "../../../assets/img/agradecimientos/city.png";
 const allies = [
   { name: "Vui Colombia", logo: Vui },
   { name: "Bid", logo: Bid },
-  { name: "Turismo", logo: Turismo },
+  { name: "Industria y turismo", logo: Turismo },
   // puedes añadir más aliados aquí
 ];
 
@@ -64,7 +64,7 @@ export default function ThankYouSection() {
   const itemWidth = 100 / visibleCount;
 
   return (
-    <Box sx={{ width: "100%", py: 8, px: { xs: 2, sm: 6 }, bgcolor: "background.paper" }}>
+    <Box sx={{ width: "100%", py: 8, px: { xs: 2, sm: 6 }}}>
       {/* Header */}
       <Box sx={{ textAlign: "center", mb: 5 }}>
         <Typography

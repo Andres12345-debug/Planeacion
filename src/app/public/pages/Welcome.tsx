@@ -26,8 +26,16 @@ export const Welcome = () => {
         <Allies />
       </Box>
       <FaqSection></FaqSection>
-      <ExpandMoreProps />
-      <ThankYouSection/>
+      <Box sx={{
+        backgroundColor: (theme) =>
+          theme.palette.mode === "light"
+            ? "#e7e7e7b5"
+            : "#0d1117",
+        transition: "background-color .3s ease",
+      }}>
+        <ExpandMoreProps />
+        <ThankYouSection />
+      </Box>
     </Box>
   );
 };
