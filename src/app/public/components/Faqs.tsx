@@ -45,7 +45,7 @@ export default function FaqSection() {
       }}
     >
       {/* Contenedor centrado con margen interno */}
-<Box sx={{ width: "100%", px: { xs: 2, md: 8 } }}>
+      <Box sx={{ width: "100%", px: { xs: 2, md: 8 } }}>
         <Box
           sx={{
             display: "flex",
@@ -110,6 +110,7 @@ export default function FaqSection() {
           </Box>
 
           {/* DERECHA: Imagen */}
+          {/* DERECHA: Imagen */}
           <Box
             sx={{
               flex: 1,
@@ -118,9 +119,9 @@ export default function FaqSection() {
               alignItems: "center",
               cursor: "pointer",
               transition: "transform 0.3s ease",
-                    "&:hover": {
-                        transform: "rotate(3deg) scale(1.03)",
-                    },
+              "&:hover": {
+                transform: "rotate(3deg) scale(1.03)",
+              },
             }}
           >
             <Box
@@ -128,13 +129,14 @@ export default function FaqSection() {
               src={faqImage}
               alt="FAQ ilustrativa"
               sx={{
-                width: "100%",
-                maxWidth: 400,
+                width: { xs: "90%", md: "100%" },  
+                maxWidth: 520,                     
                 borderRadius: 3,
                 boxShadow: 4,
               }}
             />
           </Box>
+
         </Box>
       </Box>
     </Box>

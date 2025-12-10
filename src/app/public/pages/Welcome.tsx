@@ -6,6 +6,7 @@ import Allies from "../components/Allies";
 import FaqSection from "../components/Faqs";
 import { ExpandMore } from "@mui/icons-material";
 import ExpandMoreProps from "../components/ExpandMoreProps";
+import ThankYouSection from "../components/ThankYouSection";
 
 export const Welcome = () => {
   return (
@@ -26,7 +27,7 @@ export const Welcome = () => {
       </Box>
       <FaqSection></FaqSection>
       <ExpandMoreProps />
-
+      <ThankYouSection/>
     </Box>
   );
 };

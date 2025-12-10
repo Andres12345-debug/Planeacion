@@ -142,8 +142,9 @@ export default function ImageCarousel({
   const computedHeight = {
     xs: Math.round(height * 0.55),
     sm: Math.round(height * 0.8),
-    md: height,
+    md: "100vh",
   };
+
 
   return (
     <Box

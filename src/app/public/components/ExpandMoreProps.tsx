@@ -21,6 +21,11 @@ import ShareIcon from "@mui/icons-material/Share";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 
+// ⭐ IMPORTA AQUÍ TUS IMÁGENES LOCALES
+import noticia1 from "../../../assets/img/noticias/tramite7.jpeg";
+import noticia2 from "../../../assets/img/noticias/tramite7.jpeg";
+import noticia3 from "../../../assets/img/noticias/tramite7.jpeg";
+
 interface CardItem {
   id: string | number;
   title: string;
@@ -152,26 +157,27 @@ export default function ThreeCards({
   const defaultItems: CardItem[] = [
     {
       id: 1,
-      title: "Alcaldía tunja",
+      title: "Alcaldía Tunja",
       date: "18 Febrero, 2025",
-      image: "https://picsum.photos/640/360?random=1",
+      image: noticia1, // ⭐ IMAGEN LOCAL
       excerpt: "Todo lo que necesitas saber sobre la Ventanilla Única de Construcción en Tunja",
       details: "Contenido extendido de la tarjeta 1.",
     },
     {
       id: 2,
-      title: "Alcaldía tunja",
+      title: "Alcaldía Tunja",
       date: "18 Febrero, 2025",
-      image: "https://picsum.photos/640/360?random=2",
+      image: noticia2, // ⭐ IMAGEN LOCAL
       excerpt: "¿Qué impacto tendrá la VUC-i en el desarrollo urbano de Tunja?",
       details: "Contenido extendido de la tarjeta 2.",
     },
     {
       id: 3,
-      title: "Alcaldía tunja",
+      title: "Alcaldía Tunja",
       date: "18 Febrero, 2025",
-      image: "https://picsum.photos/640/360?random=3",
-      excerpt: "Ahorra tiempo y dinero: Ventajas de gestionar tus trámites de construcción en línea con la VUC-i",
+      image: noticia3, // ⭐ IMAGEN LOCAL
+      excerpt:
+        "Ahorra tiempo y dinero: Ventajas de gestionar tus trámites de construcción en línea con la VUC-i",
       details: "Contenido extendido de la tarjeta 3.",
     },
   ];
@@ -180,21 +186,20 @@ export default function ThreeCards({
 
   return (
     <Box sx={{ width: "100%", px: { xs: 2, md: 8 }, mt: 10 }}>
-      
-      {/* 🔥 TÍTULO Y SUBTÍTULO COMO TUS OTROS COMPONENTES */}
+      {/* 🔥 TÍTULO */}
       <Box sx={{ textAlign: "center", mb: 6 }}>
         <Typography
           variant="h3"
-              sx={{
-                fontWeight: 700,
-                mb: 2
-              }}
+          sx={{
+            fontWeight: 700,
+            mb: 2,
+          }}
         >
           Noticias
         </Typography>
       </Box>
 
-      {/* GRID DE CARDS */}
+      {/* CARDS */}
       <Box
         sx={{
           display: "grid",
