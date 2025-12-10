@@ -10,80 +10,169 @@ import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
-import logo from "../../../assets/img/carroucel/Alturas.avif";
-import logo1 from "../../../assets/img/carroucel/alcaldia.avif";
-import logo2 from "../../../assets/img/carroucel/tunja.jpg";
+import KeyboardTab from "@mui/icons-material/KeyboardTab";
 
+type Slide = {
+  src: string;
+  title?: string;
+  caption?: string;
+  ctaText?: string;
+  ctaHref?: string;
+};
 
+type ImageCarouselProps = {
+  slides?: Slide[];
+  height?: number;
+  autoPlay?: boolean;
+  autoPlayInterval?: number;
+  showDots?: boolean;
+};
+
+const DEFAULT_SLIDES: Slide[] = [
+  {
+    src: require("../../../assets/img/carroucel/Alturas.avif"),
+    title: "Bienvenidos a la Alcaldía Mayor de Tunja",
+    caption: "Aquí encontrarás todos los servicios y trámites en línea",
+    ctaText: "Saber más",
+  },
+  {
+    src: require("../../../assets/img/carroucel/alcaldia.avif"),
+    title: "Trámites Rápidos",
+    caption: "Realiza tus solicitudes de manera eficiente",
+    ctaText: "Iniciar trámite",
+  },
+  {
+    src: require("../../../assets/img/carroucel/tunja.jpg"),
+    title: "Participa en la Comunidad",
+    caption: "Noticias, eventos y más",
+    ctaText: "Ver eventos",
+  },
+];
 
 export default function ImageCarousel({
-  slides = [
-    {
-      src: logo,
-      title: "Bienvenidos a la Alcaldía Mayor de Tunja",
-      caption: "Aquí encontrarás todos los servicios y trámites en línea",
-    },
-    {
-      src: logo1,
-      title: "Trámites Rápidos",
-      caption: "Realiza tus solicitudes de manera eficiente",
-    },
-    {
-      src: logo2,
-      title: "Participa en la Comunidad",
-      caption: "Noticias, eventos y más",
-    },
-  ],
+  slides = DEFAULT_SLIDES,
   height = 600,
   autoPlay = true,
   autoPlayInterval = 4000,
   showDots = true,
-}) {
+}: ImageCarouselProps) {
   const theme = useTheme();
   const [active, setActive] = React.useState(0);
   const [playing, setPlaying] = React.useState(autoPlay);
+  const intervalRef = React.useRef<number | null>(null);
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const touchStartX = React.useRef<number | null>(null);
+  const touchDelta = 40; // px threshold
 
-  const touchStart = React.useRef<number | null>(null);
+  const slidesLength = slides.length;
 
-  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    touchStart.current = e.touches[0].clientX;
+  const handleNext = React.useCallback(() => {
+    setActive((prev) => (prev + 1) % slidesLength);
+  }, [slidesLength]);
+
+  const handleBack = React.useCallback(() => {
+    setActive((prev) => (prev - 1 + slidesLength) % slidesLength);
+  }, [slidesLength]);
+
+  const goTo = (index: number) => {
+    setActive(((index % slidesLength) + slidesLength) % slidesLength);
   };
 
-  const onTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (touchStart.current == null) return;
-    const delta = e.changedTouches[0].clientX - touchStart.current;
-    if (Math.abs(delta) > 40) {
+  React.useEffect(() => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (playing) {
+      intervalRef.current = window.setInterval(() => {
+        setActive((prev) => (prev + 1) % slidesLength);
+      }, autoPlayInterval);
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [playing, autoPlayInterval, slidesLength]);
+
+  const handleMouseEnter = () => setPlaying(false);
+  const handleMouseLeave = () => autoPlay && setPlaying(true);
+  const handleFocus = () => setPlaying(false);
+  const handleBlur = () => autoPlay && setPlaying(true);
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        setPlaying(false);
+        handleNext();
+      } else if (e.key === "ArrowLeft") {
+        setPlaying(false);
+        handleBack();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleNext, handleBack]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const onTouchMove = (_e: React.TouchEvent) => {
+    // opcional: parallax en swipe
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current == null) return;
+    const endX = e.changedTouches[0].clientX;
+    const delta = endX - touchStartX.current;
+    if (Math.abs(delta) > touchDelta) {
+      setPlaying(false);
       if (delta < 0) handleNext();
       else handleBack();
     }
-    touchStart.current = null;
+    touchStartX.current = null;
   };
-
-  const handleNext = () => setActive((prev) => (prev + 1) % slides.length);
-  const handleBack = () =>
-    setActive((prev) => (prev - 1 + slides.length) % slides.length);
-
-  // Auto play
-  React.useEffect(() => {
-    if (!playing) return undefined;
-    const id = setInterval(() => {
-      setActive((prev) => (prev + 1) % slides.length);
-    }, autoPlayInterval);
-    return () => clearInterval(id);
-  }, [playing, autoPlayInterval, slides.length]);
 
   if (!slides || slides.length === 0) return null;
 
+  const computedHeight = {
+    xs: Math.round(height * 0.55),
+    sm: Math.round(height * 0.8),
+    md: height,
+  };
+
   return (
-    <Box sx={{ width: "100%", position: "relative", overflow: "hidden" }}>
+    <Box
+      ref={containerRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      sx={{
+        width: "100%",
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 2,
+        bgcolor: "background.default",
+      }}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Carrusel de imágenes"
+    >
       <Box
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
         sx={{
           display: "flex",
-          transition: "transform 600ms ease",
+          transition: "transform 600ms cubic-bezier(.2,.8,.2,1)",
           transform: `translateX(-${active * 100}%)`,
-          height: { xs: `${Math.round(height * 0.6)}px`, sm: `${height}px` },
+          height: { xs: `${computedHeight.xs}px`, sm: `${computedHeight.sm}px`, md: `${computedHeight.md}px` },
+          touchAction: "pan-y",
         }}
       >
         {slides.map((s, i) => (
@@ -91,89 +180,105 @@ export default function ImageCarousel({
             key={i}
             sx={{
               minWidth: "100%",
-              height: "100%",
               position: "relative",
               display: "flex",
-              alignItems: "center",
+              alignItems: "stretch",
               justifyContent: "center",
             }}
+            aria-hidden={i !== active}
           >
-            {/* Imagen */}
             <Box
               component="img"
               src={s.src}
-              alt={s.title || `slide-${i}`}
-              sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+              alt={s.title ?? `slide-${i + 1}`}
+              loading="lazy"
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+                filter: theme.palette.mode === "dark" ? "brightness(.9)" : "none",
+              }}
             />
 
-            {/* Overlay gradiente */}
             <Box
               sx={{
                 position: "absolute",
                 inset: 0,
+                pointerEvents: "none",
                 background:
                   "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.45) 60%)",
-                pointerEvents: "none",
               }}
             />
 
-            {/* Texto + botón */}
             <Box
               sx={{
                 position: "absolute",
-                left: { xs: 16, sm: 24 },
-                bottom: { xs: 16, sm: 24 },
+                left: { xs: 16, sm: 28 },
+                bottom: { xs: 18, sm: 28 },
                 right: { xs: 16, sm: "auto" },
                 color: "common.white",
                 pointerEvents: "auto",
-                maxWidth: { xs: "80%", sm: "60%" },
+                maxWidth: { xs: "80%", sm: "60%", md: "50%" },
+                textShadow: "0 4px 18px rgba(0,0,0,0.35)",
               }}
             >
               {s.title && (
-                <Typography variant="h1" sx={{ fontWeight: 700, mb: 1 }}>
+                <Typography
+                  component="h2"
+                  variant="h4"
+                  sx={{
+                    fontWeight: 800,
+                    mb: 1,
+                    fontSize: { xs: "1.25rem", sm: "1.75rem", md: "2.25rem" },
+                    lineHeight: 1.05,
+                  }}
+                >
                   {s.title}
                 </Typography>
-              )}{s.caption && (
+              )}
+
+              {s.caption && (
                 <Typography
                   variant="body1"
                   sx={{
                     mb: 2,
-                    fontSize: { xs: "1rem", sm: "1.25rem" }, // más grande en pantallas grandes
-                    lineHeight: 1.5,
+                    fontSize: { xs: "0.95rem", sm: "1.05rem" },
+                    lineHeight: 1.4,
                     fontWeight: 500,
+                    color: "rgba(255,255,255,0.95)",
                   }}
                 >
                   {s.caption}
                 </Typography>
               )}
 
-              <Button
-                variant="contained"
-                color="secondary"
-                sx={{
-                  color: "common.white",
-                  textTransform: "none",
-                  fontSize: "1.2rem",          // tamaño de la letra
-                  px: 4,                       // padding horizontal
-                  py: 1.5,                     // padding vertical
-                  borderRadius: 2,              // bordes más redondeados
-                  transition: "transform 0.3s, box-shadow 0.3s",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: 4,
-                  },
-                }}
-              >
-                Saber más
-              </Button>
+              {s.ctaText && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  href={s.ctaHref}
+                  sx={{
+                    color: "common.white",
+                    textTransform: "none",
+                    fontSize: { xs: "0.95rem", sm: "1.05rem" },
+                    px: 3,
+                    py: 1,
+                    borderRadius: 2,
+                    boxShadow: 3,
+                    "&:hover": { transform: "translateY(-3px)", boxShadow: 6 },
+                  }}
+                >
+                  {s.ctaText}
+                </Button>
+              )}
             </Box>
           </Box>
         ))}
       </Box>
 
-      {/* Controles izquierda/derecha */}
       <IconButton
-        aria-label="anterior"
+        aria-label="Anterior"
         onClick={() => {
           setPlaying(false);
           handleBack();
@@ -181,18 +286,19 @@ export default function ImageCarousel({
         sx={{
           position: "absolute",
           top: "50%",
-          left: 8,
+          left: 12,
           transform: "translateY(-50%)",
           bgcolor: "background.paper",
           "&:hover": { bgcolor: "background.paper" },
-          boxShadow: 1,
+          boxShadow: 2,
+          zIndex: 10,
         }}
       >
         <KeyboardArrowLeft />
       </IconButton>
 
       <IconButton
-        aria-label="siguiente"
+        aria-label="Siguiente"
         onClick={() => {
           setPlaying(false);
           handleNext();
@@ -200,19 +306,19 @@ export default function ImageCarousel({
         sx={{
           position: "absolute",
           top: "50%",
-          right: 8,
+          right: 12,
           transform: "translateY(-50%)",
           bgcolor: "background.paper",
           "&:hover": { bgcolor: "background.paper" },
-          boxShadow: 1,
+          boxShadow: 2,
+          zIndex: 10,
         }}
       >
         <KeyboardArrowRight />
       </IconButton>
 
-      {/* Play/Pause */}
       <IconButton
-        aria-label={playing ? "pause" : "play"}
+        aria-label={playing ? "Pausar autoplay" : "Iniciar autoplay"}
         onClick={() => setPlaying((p) => !p)}
         sx={{
           position: "absolute",
@@ -220,22 +326,25 @@ export default function ImageCarousel({
           right: 12,
           bgcolor: "background.paper",
           "&:hover": { bgcolor: "background.paper" },
-          boxShadow: 1,
+          boxShadow: 2,
+          zIndex: 11,
         }}
       >
         {playing ? <PauseIcon /> : <PlayArrowIcon />}
       </IconButton>
 
-      {/* Dots */}
+      {/* MobileStepper: Self-closing (no children) */}
       {showDots && (
         <MobileStepper
           variant="dots"
-          steps={slides.length}
+          steps={slidesLength}
           position="static"
           activeStep={active}
+          nextButton={<span />}
+          backButton={<span />}
           sx={{
             position: "absolute",
-            bottom: 8,
+            bottom: 12,
             left: 0,
             right: 0,
             background: "transparent",
@@ -243,10 +352,73 @@ export default function ImageCarousel({
             pointerEvents: "none",
             ".MuiMobileStepper-dots": { pointerEvents: "auto" },
           }}
-          nextButton={<span />}
-          backButton={<span />}
         />
       )}
+
+      {showDots && (
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: 8,
+            left: 0,
+            right: 0,
+            display: "flex",
+            justifyContent: "center",
+            gap: 1.25,
+            zIndex: 12,
+            pointerEvents: "none",
+          }}
+        >
+          {Array.from({ length: slidesLength }).map((_, i) => (
+            <Box
+              key={i}
+              onClick={() => {
+                setPlaying(false);
+                goTo(i);
+              }}
+              sx={{
+                width: active === i ? 36 : 10,
+                height: 10,
+                borderRadius: 6,
+                transition: "width 300ms ease, background-color 300ms ease",
+                bgcolor: active === i ? "secondary.main" : "grey.400",
+                cursor: "pointer",
+                boxShadow: active === i ? 3 : "none",
+                pointerEvents: "auto",
+              }}
+              role="button"
+              aria-label={`Ir a la diapositiva ${i + 1}`}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  setPlaying(false);
+                  goTo(i);
+                }
+              }}
+            />
+          ))}
+        </Box>
+      )}
+
+      <Box
+        sx={{
+          position: "absolute",
+          top: 12,
+          left: 12,
+          bgcolor: "rgba(0,0,0,0.35)",
+          px: 1,
+          py: 0.5,
+          borderRadius: 1,
+          color: "common.white",
+          display: { xs: "none", sm: "flex" },
+          gap: 0.5,
+          alignItems: "center",
+          zIndex: 11,
+        }}
+      >
+        <KeyboardTab sx={{ fontSize: 16 }} />
+        <Typography variant="caption">← → para navegar</Typography>
+      </Box>
     </Box>
   );
 }
