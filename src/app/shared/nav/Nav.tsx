@@ -7,6 +7,9 @@ import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
 import { alpha, styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
+import LoginIcon from "@mui/icons-material/Login";
+import AccountBoxIcon from '@mui/icons-material/AccountBox';
+
 import { DarkMode, LightMode, Menu as MenuIcon, Close as CloseIcon } from "@mui/icons-material";
 import { useThemeContext } from "../theme/ThemeConext";
 import {
@@ -201,6 +204,17 @@ export default function TopNavigation() {
             {/* Theme toggle */}
             <IconButton onClick={toggleTheme} color="inherit" sx={{ ml: 0.5 }}>
               {mode === "light" ? <DarkMode /> : <LightMode />}
+            </IconButton>
+            {/* Botón ir al perfil */}
+            <IconButton
+              component={Link}
+              to="/login"
+              target="_blank"
+              rel="noopener noreferrer"
+              color="inherit"
+              sx={{ ml: 0.5 }}
+            >
+              <AccountBoxIcon />
             </IconButton>
           </Box>
         </Toolbar>

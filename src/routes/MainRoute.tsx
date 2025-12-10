@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import React, { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { MainLayout } from "../app/shared/layout/MainLayout";
 
@@ -16,6 +16,10 @@ const LazyWelcome = lazy(() =>
     }))
 );
 
+// Lazy imports (páginas públicas)
+const LazySesion = React.lazy(() => import("../app/public/pages/Sesion"));
+
+
 export const MainRoute = () => {
     return (
         <Routes>
@@ -24,8 +28,9 @@ export const MainRoute = () => {
                 {/* ruta index */}
                 <Route index element={<LazyWelcome />} />
                 {/* otras rutas dentro del layout */}
-                {/* <Route path="perfil" element={<LazyPerfil />} /> */}
             </Route>
+            <Route path="/login" element={<LazySesion />} />
+
             {/* fallback para rutas no encontradas */}
             <Route path="*" element={<LazyError />} />
         </Routes>
