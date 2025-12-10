@@ -130,17 +130,11 @@ export default function TopNavigation() {
                 src={logo}
                 alt="Logo Alcaldía"
                 sx={{
-                  height: { xs: 48, sm: 64, md: 72 },
+                  height: { xs: 48, sm: 64, md: 60 },
                   objectFit: "contain",
                   pr: 1,
                 }}
               />
-              {/* Optional short title near logo (hidden xs) */}
-              {isSmUp && (
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", ml: 1 }}>
-                  Alcaldía Mayor de Tunja
-                </Typography>
-              )}
             </Link>
           </Box>
 
@@ -221,9 +215,6 @@ export default function TopNavigation() {
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Box component="img" src={logo} alt="logo" sx={{ height: 48, objectFit: "contain" }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                Tunja
-              </Typography>
             </Box>
             <IconButton onClick={toggleDrawer(false)} aria-label="cerrar">
               <CloseIcon />
