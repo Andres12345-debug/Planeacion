@@ -1,118 +1,89 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Stack,
-  CircularProgress,
-  useTheme,
-} from "@mui/material";
+import { Box, Stack, Button } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
-import { crearMensaje } from "../../utilidades/funciones/mensaje";
+
 import { AccesoServicio } from "../../../app/servicios/publicos/AccesoServicio";
+import { crearMensaje } from "../../utilidades/funciones/mensaje";
+import { FormCard } from "../../compartido/ui/FormCard";
+import { CampoTexto } from "../../compartido/ui/CampoTexto";
+import { BotonPrincipal } from "../../compartido/ui/BotonPrincipal";
+
+const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 const NuevaContrasenia = () => {
-  const { token } = useParams();  // Aquí obtienes el token de la URL
+  const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const theme = useTheme();
-
-  const [nuevaClave, setNuevaClave] = useState(""); // Estado para la nueva contraseña
-  const [confirmarClave, setConfirmarClave] = useState(""); // Estado para confirmar contraseña
-  const [loading, setLoading] = useState(false); // Estado para cargar mientras se envía la solicitud
+  const [nuevaClave, setNuevaClave] = useState("");
+  const [confirmarClave, setConfirmarClave] = useState("");
+  const [enProceso, setEnProceso] = useState(false);
 
   const cambiarPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validación si la nueva clave no está vacía
-    if (!nuevaClave) {
-      crearMensaje("warning", "Ingresa la nueva contraseña");
+    if (!nuevaClave || !confirmarClave) {
+      crearMensaje("warning", "Completa ambos campos");
       return;
     }
-
-    if (!confirmarClave) {
-      crearMensaje("warning", "Confirma la nueva contraseña");
-      return;
-    }
-
     if (nuevaClave !== confirmarClave) {
       crearMensaje("warning", "Las contraseñas no coinciden");
       return;
     }
-
-    // Validación de contraseña mejorada (al menos 8 caracteres, 1 mayúscula, 1 minúscula, 1 número, 1 carácter especial)
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(nuevaClave)) {
-      crearMensaje("warning", "La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, una minúscula, un número y un carácter especial.");
+    if (!PASSWORD_REGEX.test(nuevaClave)) {
+      crearMensaje(
+        "warning",
+        "La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial (@$!%*?&)"
+      );
       return;
     }
 
+    setEnProceso(true);
     try {
-      setLoading(true);  // Inicia el cargando mientras la solicitud está en proceso
-
-      // Envía la nueva contraseña y el token al backend
       await AccesoServicio.nuevaContrasenia(token!, { nuevaClave });
-
-      // Notifica al usuario que la contraseña ha sido actualizada correctamente
       crearMensaje("success", "Contraseña actualizada correctamente");
-
-      setTimeout(() => {
-        navigate("/login"); // Redirige al login después de 2 segundos
-      }, 2000);
+      setTimeout(() => navigate("/login"), 2000);
     } catch (error: any) {
-      console.error(error);
-
-      // Manejo de error, si el token es inválido o ha expirado
-      if (error.response && error.response.data && error.response.data.message === 'Token expirado') {
-        crearMensaje("error", "El token ha expirado, por favor solicita un nuevo enlace.");
-      } else {
-        crearMensaje("error", "Token inválido o expirado");
-      }
+      crearMensaje("error", error.message || "Token inválido o expirado");
     } finally {
-      setLoading(false); // Detiene el cargando una vez que la solicitud se haya procesado
+      setEnProceso(false);
     }
   };
 
   return (
-    <Box
-      sx={{
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background: theme.palette.background.default,
-      }}
-    >
-      <Paper elevation={10} sx={{ p: 5, width: "100%", maxWidth: 420, borderRadius: 4 }}>
-        <Typography variant="h5" fontWeight={700} mb={3}>
-          Nueva contraseña
-        </Typography>
-
-        <form onSubmit={cambiarPassword}>
-          <Stack spacing={3}>
-            <TextField
+    <Box sx={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", px: 2 }}>
+      <FormCard
+        titulo="Nueva contraseña"
+        subtitulo="Elige una contraseña segura para tu cuenta."
+      >
+        <Box component="form" onSubmit={cambiarPassword}>
+          <Stack spacing={2.5}>
+            <CampoTexto
               label="Nueva contraseña"
               type="password"
-              fullWidth
               value={nuevaClave}
-              onChange={(e) => setNuevaClave(e.target.value)} // Actualiza el estado con la nueva contraseña
+              onChange={(e) => setNuevaClave(e.target.value)}
+              required
             />
-
-            <TextField
-              label="Confirmar nueva contraseña"
+            <CampoTexto
+              label="Confirmar contraseña"
               type="password"
-              fullWidth
               value={confirmarClave}
-              onChange={(e) => setConfirmarClave(e.target.value)} // Actualiza el estado con la confirmación
+              onChange={(e) => setConfirmarClave(e.target.value)}
+              required
             />
 
-            <Button type="submit" variant="contained" disabled={loading} sx={{ py: 1.5, fontWeight: 700 }}>
-              {loading ? <CircularProgress size={24} color="inherit" /> : "Actualizar contraseña"}
+            <BotonPrincipal cargando={enProceso}>Actualizar contraseña</BotonPrincipal>
+
+            <Button
+              variant="text"
+              onClick={() => navigate("/login")}
+              sx={{ textTransform: "none", fontSize: "0.85rem" }}
+            >
+              Volver al inicio de sesión
             </Button>
           </Stack>
-        </form>
-      </Paper>
+        </Box>
+      </FormCard>
     </Box>
   );
 };

@@ -214,9 +214,6 @@ export default function TopNavigation() {
         </Toolbar>
       </AppBar>
 
-      {/* Spacer so content doesn't hide under fixed AppBar */}
-      <Toolbar />
-
       {/* Drawer for small screens */}
       <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
         <Box sx={{ width: 300 }} role="presentation" onKeyDown={toggleDrawer(false)}>

@@ -1,24 +1,22 @@
 import React, { useState } from "react";
 import {
   Box,
-  Typography,
-  TextField,
-  Button,
   Stack,
-  Paper,
-  useTheme,
-  ToggleButton,
-  ToggleButtonGroup,
+  Button,
   MenuItem,
   Grid,
-  alpha,
-  CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+
 import { AccesoServicio } from "../../servicios/publicos/AccesoServicio";
 import { crearMensaje } from "../../utilidades/funciones/mensaje";
 import { tokenHelper } from "../../utilidades/auth/tokenHelper";
+import { FormCard } from "../../compartido/ui/FormCard";
+import { CampoTexto } from "../../compartido/ui/CampoTexto";
+import { BotonPrincipal } from "../../compartido/ui/BotonPrincipal";
 
 type TipoPersona = "NATURAL" | "JURIDICA";
 
@@ -31,57 +29,47 @@ interface TokenPayload {
   exp?: number;
 }
 
+const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
 const SEXOS = [
   { value: 1, label: "Masculino" },
   { value: 2, label: "Femenino" },
 ];
 
-const campoBase = {
-  nombreUsuario: "",
-  telefonoUsuario: "",
-  correoUsuario: "",
-  claveAcceso: "",
-  confirmarClave: "",
-};
-
-const campoNatural = {
-  cedula: "",
-  fechaNacimientoUsuario: "",
-  sexoBiologico: "",
-  ciudadNacimientoId: "",
-  barrioResidenciaId: "",
-  direccionResidencia: "",
-};
-
-const campoJuridica = {
-  razonSocial: "",
-  nit: "",
-  representanteLegal: "",
-  tipoEmpresa: "",
-};
-
 const Registro = () => {
-  const theme = useTheme();
   const navigate = useNavigate();
-
   const [tipoPersona, setTipoPersona] = useState<TipoPersona>("NATURAL");
   const [enProceso, setEnProceso] = useState(false);
 
-  const [base, setBase] = useState(campoBase);
-  const [natural, setNatural] = useState(campoNatural);
-  const [juridica, setJuridica] = useState(campoJuridica);
+  const [base, setBase] = useState({
+    nombreUsuario: "",
+    telefonoUsuario: "",
+    correoUsuario: "",
+    claveAcceso: "",
+    confirmarClave: "",
+  });
 
-  const handleBase = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBase({ ...base, [e.target.name]: e.target.value });
-  };
-  const handleNatural = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNatural({ ...natural, [e.target.name]: e.target.value });
-  };
-  const handleJuridica = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setJuridica({ ...juridica, [e.target.name]: e.target.value });
-  };
+  const [natural, setNatural] = useState({
+    cedula: "",
+    fechaNacimientoUsuario: "",
+    sexoBiologico: "",
+    ciudadNacimientoId: "",
+    barrioResidenciaId: "",
+    direccionResidencia: "",
+  });
 
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const [juridica, setJuridica] = useState({
+    razonSocial: "",
+    nit: "",
+    representanteLegal: "",
+    tipoEmpresa: "",
+  });
+
+  const onChange =
+    (setter: React.Dispatch<React.SetStateAction<any>>, estado: any) =>
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      setter({ ...estado, [e.target.name]: e.target.value });
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,8 +78,7 @@ const Registro = () => {
       crearMensaje("warning", "Las contraseñas no coinciden");
       return;
     }
-
-    if (!passwordRegex.test(base.claveAcceso)) {
+    if (!PASSWORD_REGEX.test(base.claveAcceso)) {
       crearMensaje(
         "warning",
         "La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial (@$!%*?&)"
@@ -100,7 +87,6 @@ const Registro = () => {
     }
 
     setEnProceso(true);
-
     try {
       const payload: Record<string, any> = {
         tipoPersona,
@@ -111,27 +97,23 @@ const Registro = () => {
       };
 
       if (tipoPersona === "NATURAL") {
-        payload.cedula = natural.cedula;
-        payload.fechaNacimientoUsuario = natural.fechaNacimientoUsuario;
-        payload.sexoBiologico = Number(natural.sexoBiologico);
-        payload.ciudadNacimientoId = Number(natural.ciudadNacimientoId);
-        payload.barrioResidenciaId = Number(natural.barrioResidenciaId);
-        payload.direccionResidencia = natural.direccionResidencia;
+        Object.assign(payload, {
+          cedula: natural.cedula,
+          fechaNacimientoUsuario: natural.fechaNacimientoUsuario,
+          sexoBiologico: Number(natural.sexoBiologico),
+          ciudadNacimientoId: Number(natural.ciudadNacimientoId),
+          barrioResidenciaId: Number(natural.barrioResidenciaId),
+          direccionResidencia: natural.direccionResidencia,
+        });
       } else {
-        payload.razonSocial = juridica.razonSocial;
-        payload.nit = juridica.nit;
-        payload.representanteLegal = juridica.representanteLegal;
-        payload.tipoEmpresa = juridica.tipoEmpresa;
+        Object.assign(payload, juridica);
       }
 
       const respuesta = await AccesoServicio.registrarUsuario(payload);
       const token = respuesta?.token;
-
       if (!token) throw new Error("TOKEN_NOT_FOUND");
-
       const datosToken = jwtDecode<TokenPayload>(token);
       tokenHelper.set(token);
-
       crearMensaje("success", `¡Cuenta creada! Bienvenido, ${datosToken.name}`);
       navigate("/dashboard", { replace: true });
     } catch (error: any) {
@@ -150,24 +132,13 @@ const Registro = () => {
         alignItems: "flex-start",
         py: 6,
         px: 2,
-        background:
-          theme.palette.mode === "light"
-            ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`
-            : theme.palette.background.default,
       }}
     >
-      <Paper
-        elevation={8}
-        sx={{ width: "100%", maxWidth: 640, p: { xs: 4, md: 5 }, borderRadius: 4 }}
+      <FormCard
+        titulo="Crear cuenta"
+        subtitulo="Regístrate para acceder a la Ventanilla Única de Construcción"
+        maxWidth={640}
       >
-        <Typography variant="h4" fontWeight={800} mb={0.5}>
-          Crear cuenta
-        </Typography>
-        <Typography variant="body2" color="text.secondary" mb={3}>
-          Regístrate para acceder a la Ventanilla Única de Construcción
-        </Typography>
-
-        {/* Selector tipo persona */}
         <ToggleButtonGroup
           value={tipoPersona}
           exclusive
@@ -186,205 +157,177 @@ const Registro = () => {
         <Box component="form" onSubmit={enviar}>
           <Stack spacing={2.5}>
             {/* Campos comunes */}
-            <TextField
+            <CampoTexto
               label="Nombre completo"
               name="nombreUsuario"
               value={base.nombreUsuario}
-              onChange={handleBase}
+              onChange={onChange(setBase, base)}
               required
-              fullWidth
             />
             <Grid container spacing={2}>
               <Grid size={6}>
-                <TextField
+                <CampoTexto
                   label="Teléfono"
                   name="telefonoUsuario"
                   value={base.telefonoUsuario}
-                  onChange={handleBase}
+                  onChange={onChange(setBase, base)}
                   required
-                  fullWidth
                 />
               </Grid>
               <Grid size={6}>
-                <TextField
+                <CampoTexto
                   label="Correo electrónico"
                   name="correoUsuario"
                   type="email"
                   value={base.correoUsuario}
-                  onChange={handleBase}
+                  onChange={onChange(setBase, base)}
                   required
-                  fullWidth
                 />
               </Grid>
             </Grid>
             <Grid container spacing={2}>
               <Grid size={6}>
-                <TextField
+                <CampoTexto
                   label="Contraseña"
                   name="claveAcceso"
                   type="password"
                   value={base.claveAcceso}
-                  onChange={handleBase}
+                  onChange={onChange(setBase, base)}
                   required
-                  fullWidth
                 />
               </Grid>
               <Grid size={6}>
-                <TextField
+                <CampoTexto
                   label="Confirmar contraseña"
                   name="confirmarClave"
                   type="password"
                   value={base.confirmarClave}
-                  onChange={handleBase}
+                  onChange={onChange(setBase, base)}
                   required
-                  fullWidth
                 />
               </Grid>
             </Grid>
 
-            {/* Campos Persona Natural */}
+            {/* Persona Natural */}
             {tipoPersona === "NATURAL" && (
               <>
                 <Grid container spacing={2}>
                   <Grid size={6}>
-                    <TextField
+                    <CampoTexto
                       label="Cédula"
                       name="cedula"
                       value={natural.cedula}
-                      onChange={handleNatural}
+                      onChange={onChange(setNatural, natural)}
                       required
-                      fullWidth
                     />
                   </Grid>
                   <Grid size={6}>
-                    <TextField
+                    <CampoTexto
                       label="Fecha de nacimiento"
                       name="fechaNacimientoUsuario"
                       type="date"
                       value={natural.fechaNacimientoUsuario}
-                      onChange={handleNatural}
+                      onChange={onChange(setNatural, natural)}
                       required
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
+                      slotProps={{ inputLabel: { shrink: true } }}
                     />
                   </Grid>
                 </Grid>
                 <Grid container spacing={2}>
                   <Grid size={4}>
-                    <TextField
+                    <CampoTexto
                       label="Sexo biológico"
                       name="sexoBiologico"
                       select
                       value={natural.sexoBiologico}
-                      onChange={handleNatural}
+                      onChange={onChange(setNatural, natural)}
                       required
-                      fullWidth
                     >
                       {SEXOS.map((s) => (
                         <MenuItem key={s.value} value={s.value}>
                           {s.label}
                         </MenuItem>
                       ))}
-                    </TextField>
+                    </CampoTexto>
                   </Grid>
                   <Grid size={4}>
-                    <TextField
-                      label="ID Ciudad de nacimiento"
+                    <CampoTexto
+                      label="ID Ciudad nacimiento"
                       name="ciudadNacimientoId"
                       type="number"
                       value={natural.ciudadNacimientoId}
-                      onChange={handleNatural}
+                      onChange={onChange(setNatural, natural)}
                       required
-                      fullWidth
                     />
                   </Grid>
                   <Grid size={4}>
-                    <TextField
-                      label="ID Barrio de residencia"
+                    <CampoTexto
+                      label="ID Barrio residencia"
                       name="barrioResidenciaId"
                       type="number"
                       value={natural.barrioResidenciaId}
-                      onChange={handleNatural}
+                      onChange={onChange(setNatural, natural)}
                       required
-                      fullWidth
                     />
                   </Grid>
                 </Grid>
-                <TextField
+                <CampoTexto
                   label="Dirección de residencia"
                   name="direccionResidencia"
                   value={natural.direccionResidencia}
-                  onChange={handleNatural}
+                  onChange={onChange(setNatural, natural)}
                   required
-                  fullWidth
                 />
               </>
             )}
 
-            {/* Campos Persona Jurídica */}
+            {/* Persona Jurídica */}
             {tipoPersona === "JURIDICA" && (
               <>
                 <Grid container spacing={2}>
                   <Grid size={6}>
-                    <TextField
+                    <CampoTexto
                       label="Razón social"
                       name="razonSocial"
                       value={juridica.razonSocial}
-                      onChange={handleJuridica}
+                      onChange={onChange(setJuridica, juridica)}
                       required
-                      fullWidth
                     />
                   </Grid>
                   <Grid size={6}>
-                    <TextField
+                    <CampoTexto
                       label="NIT"
                       name="nit"
                       value={juridica.nit}
-                      onChange={handleJuridica}
+                      onChange={onChange(setJuridica, juridica)}
                       required
-                      fullWidth
                     />
                   </Grid>
                 </Grid>
                 <Grid container spacing={2}>
                   <Grid size={6}>
-                    <TextField
+                    <CampoTexto
                       label="Representante legal"
                       name="representanteLegal"
                       value={juridica.representanteLegal}
-                      onChange={handleJuridica}
+                      onChange={onChange(setJuridica, juridica)}
                       required
-                      fullWidth
                     />
                   </Grid>
                   <Grid size={6}>
-                    <TextField
+                    <CampoTexto
                       label="Tipo de empresa"
                       name="tipoEmpresa"
                       value={juridica.tipoEmpresa}
-                      onChange={handleJuridica}
+                      onChange={onChange(setJuridica, juridica)}
                       required
-                      fullWidth
                     />
                   </Grid>
                 </Grid>
               </>
             )}
 
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={enProceso}
-              sx={{
-                py: 1.8,
-                borderRadius: 3,
-                fontWeight: 800,
-                fontSize: "1rem",
-                textTransform: "none",
-              }}
-            >
-              {enProceso ? <CircularProgress size={24} color="inherit" /> : "Crear cuenta"}
-            </Button>
+            <BotonPrincipal cargando={enProceso}>Crear cuenta</BotonPrincipal>
 
             <Button
               variant="text"
@@ -395,7 +338,7 @@ const Registro = () => {
             </Button>
           </Stack>
         </Box>
-      </Paper>
+      </FormCard>
     </Box>
   );
 };
