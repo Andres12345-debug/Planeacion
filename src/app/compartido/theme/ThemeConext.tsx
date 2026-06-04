@@ -61,7 +61,7 @@ const TOKENS = {
   slate300: "#cbd5e1",
   slate200: "#e2e8f0",
   slate100: "#f1f5f9",
-  slate50:  "#f8fafc",
+  slate50: "#f8fafc",
 
   // Accent ámbar
   amber500: "#f59e0b",
@@ -110,31 +110,30 @@ export const ThemeContextProvider = ({ children }: { children: ReactNode }) => {
 
         // ── Primario ──────────────────────────────────────────────────────
         primary: {
-          light:        isLight ? TOKENS.blue500 : TOKENS.blue400,
-          main:         isLight ? TOKENS.blue700 : TOKENS.blue500,
-          dark:         isLight ? TOKENS.blue800 : TOKENS.blue700,
+          light: isLight ? TOKENS.blue500 : TOKENS.blue400,
+          main: isLight ? TOKENS.blue700 : TOKENS.blue500,
+          dark: isLight ? TOKENS.blue800 : TOKENS.blue700,
           contrastText: TOKENS.white,
         },
 
         // ── Secundario ────────────────────────────────────────────────────
         secondary: {
-          light:        isLight ? TOKENS.teal500 : TOKENS.teal300,
-          main:         isLight ? TOKENS.teal600 : TOKENS.teal400,
-          dark:         isLight ? TOKENS.teal700 : TOKENS.teal600,
+          light: isLight ? TOKENS.teal500 : TOKENS.teal300,
+          main: isLight ? TOKENS.teal600 : TOKENS.teal400,
+          dark: isLight ? TOKENS.teal700 : TOKENS.teal600,
           contrastText: TOKENS.white,
         },
 
         // ── Fondo ─────────────────────────────────────────────────────────
         background: {
-          default: isLight ? TOKENS.slate100 : TOKENS.slate900,
-          paper:   isLight ? TOKENS.white     : TOKENS.slate800,
+          default: isLight ? TOKENS.slate100 : "oklch(14.1% 0.005 285.823)",
+          paper: isLight ? TOKENS.white : "oklch(14.1% 0.005 285.823)",
         },
-
         // ── Texto ─────────────────────────────────────────────────────────
         text: {
-          primary:   isLight ? TOKENS.slate900 : TOKENS.slate100,
+          primary: isLight ? TOKENS.slate900 : TOKENS.slate100,
           secondary: isLight ? TOKENS.slate500 : TOKENS.slate400,
-          disabled:  isLight ? TOKENS.slate400 : TOKENS.slate600,
+          disabled: isLight ? TOKENS.slate400 : TOKENS.slate600,
         },
 
         // ── Divisores ─────────────────────────────────────────────────────
@@ -142,19 +141,19 @@ export const ThemeContextProvider = ({ children }: { children: ReactNode }) => {
 
         // ── Custom: Sidebar ───────────────────────────────────────────────
         sidebar: {
-          main:         TOKENS.slate900,   // siempre oscuro, independiente del modo
+          main: TOKENS.slate900,   // siempre oscuro, independiente del modo
           contrastText: TOKENS.slate200,
         },
 
         // ── Custom: Accent ────────────────────────────────────────────────
         accent: {
-          main:         TOKENS.amber500,
+          main: TOKENS.amber500,
           contrastText: TOKENS.amber900,
         },
 
         // ── Custom: Neutral ───────────────────────────────────────────────
         neutral: {
-          main:         TOKENS.slate500,
+          main: TOKENS.slate500,
           contrastText: TOKENS.white,
         },
       },
@@ -162,19 +161,19 @@ export const ThemeContextProvider = ({ children }: { children: ReactNode }) => {
       // ── Tipografía ────────────────────────────────────────────────────────
       typography: {
         fontFamily: '"Roboto", "Helvetica Neue", Arial, sans-serif',
-        h1: { fontSize: "2.25rem",  fontWeight: 800, lineHeight: 1.2 },
+        h1: { fontSize: "2.25rem", fontWeight: 800, lineHeight: 1.2 },
         h2: { fontSize: "1.875rem", fontWeight: 700, lineHeight: 1.25 },
-        h3: { fontSize: "1.5rem",   fontWeight: 700, lineHeight: 1.3 },
-        h4: { fontSize: "1.25rem",  fontWeight: 600, lineHeight: 1.4 },
+        h3: { fontSize: "1.5rem", fontWeight: 700, lineHeight: 1.3 },
+        h4: { fontSize: "1.25rem", fontWeight: 600, lineHeight: 1.4 },
         h5: { fontSize: "1.125rem", fontWeight: 600, lineHeight: 1.4 },
-        h6: { fontSize: "1rem",     fontWeight: 600, lineHeight: 1.5 },
-        subtitle1: { fontSize: "0.95rem",  fontWeight: 500, lineHeight: 1.5 },
+        h6: { fontSize: "1rem", fontWeight: 600, lineHeight: 1.5 },
+        subtitle1: { fontSize: "0.95rem", fontWeight: 500, lineHeight: 1.5 },
         subtitle2: { fontSize: "0.875rem", fontWeight: 600, lineHeight: 1.5 },
-        body1:     { fontSize: "1rem",     fontWeight: 400, lineHeight: 1.6 },
-        body2:     { fontSize: "0.875rem", fontWeight: 400, lineHeight: 1.5 },
-        button:    { fontSize: "0.875rem", fontWeight: 600, textTransform: "none" },
-        caption:   { fontSize: "0.75rem",  fontWeight: 400, lineHeight: 1.5 },
-        overline:  { fontSize: "0.7rem",   fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase" },
+        body1: { fontSize: "1rem", fontWeight: 400, lineHeight: 1.6 },
+        body2: { fontSize: "0.875rem", fontWeight: 400, lineHeight: 1.5 },
+        button: { fontSize: "0.875rem", fontWeight: 600, textTransform: "none" },
+        caption: { fontSize: "0.75rem", fontWeight: 400, lineHeight: 1.5 },
+        overline: { fontSize: "0.7rem", fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase" },
       },
 
       // ── Shape ─────────────────────────────────────────────────────────────

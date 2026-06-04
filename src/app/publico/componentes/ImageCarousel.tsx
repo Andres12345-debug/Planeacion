@@ -30,10 +30,7 @@ type ImageCarouselProps = {
 
 const DEFAULT_SLIDES: Slide[] = [
   {
-    src: require("../../../activos/imagenes/carroucel/Alturas.avif"),
-    title: "Bienvenidos a la Alcaldía Mayor de Tunja",
-    caption: "Aquí encontrarás todos los servicios y trámites en línea",
-    ctaText: "Saber más",
+    src: require("../../../activos/imagenes/carroucel/Alturas.avif")
   },
   {
     src: require("../../../activos/imagenes/carroucel/alcaldia.avif"),

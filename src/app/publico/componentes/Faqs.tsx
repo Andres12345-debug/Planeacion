@@ -9,7 +9,7 @@ import {
   useTheme,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import faqImage from "../../../activos/imagenes/carroucel/Alturas.avif"; // ajusta la ruta
+import faqImage from "../../../activos/imagenes/carroucel/Alturas.avif";
 
 const faqs = [
   {
@@ -44,7 +44,6 @@ export default function FaqSection() {
         py: 8,
       }}
     >
-      {/* Contenedor centrado con margen interno */}
       <Box sx={{ width: "100%", px: { xs: 2, md: 8 } }}>
         <Box
           sx={{
@@ -54,53 +53,74 @@ export default function FaqSection() {
             alignItems: "center",
           }}
         >
-          {/* IZQUIERDA: Título + FAQ */}
+          {/* Texto y FAQ */}
           <Box sx={{ flex: 1 }}>
             <Typography
               variant="h3"
               sx={{
                 fontWeight: 700,
-                mb: 2
+                mb: 2,
+                color: "text.primary",
               }}
             >
               Preguntas Frecuentes
             </Typography>
+
             <Typography
               variant="body1"
               sx={{
                 maxWidth: 500,
-                mb: 4
+                mb: 4,
+                color: "text.secondary",
               }}
             >
-              Aquí respondemos las dudas más comunes de nuestros usuarios de manera clara y rápida.
+              Aquí respondemos las dudas más comunes de nuestros usuarios de
+              manera clara y rápida.
             </Typography>
 
-            {/* Acordeones */}
             <Box>
               {faqs.map((faq, index) => (
                 <Accordion
                   key={index}
+                  disableGutters
+                  elevation={3}
                   sx={{
                     mb: 2,
-                    bgcolor: theme.palette.grey[100],
-                    boxShadow: 3,
+                    bgcolor: "background.paper",
                     borderRadius: 2,
-                    transition: "all 0.3s ease",
-                    "&.Mui-expanded": {
-                      bgcolor: theme.palette.grey[200],
-                      boxShadow: 5,
+                    overflow: "hidden",
+                    "&:before": {
+                      display: "none",
                     },
                   }}
                 >
                   <AccordionSummary
-                    expandIcon={<ExpandMoreIcon sx={{ color: theme.palette.text.disabled }} />}
+                    expandIcon={
+                      <ExpandMoreIcon
+                        sx={{
+                          color: "text.secondary",
+                        }}
+                      />
+                    }
                     aria-controls={`faq-content-${index}`}
                     id={`faq-header-${index}`}
                   >
-                    <Typography sx={{ fontWeight: 600, color: theme.palette.text.disabled }}>{faq.question}</Typography>
+                    <Typography
+                      sx={{
+                        fontWeight: 600,
+                        color: "text.primary",
+                      }}
+                    >
+                      {faq.question}
+                    </Typography>
                   </AccordionSummary>
+
                   <AccordionDetails>
-                    <Typography sx={{ color: theme.palette.text.disabled }}>
+                    <Typography
+                      sx={{
+                        color: "text.secondary",
+                      }}
+                    >
                       {faq.answer}
                     </Typography>
                   </AccordionDetails>
@@ -109,8 +129,7 @@ export default function FaqSection() {
             </Box>
           </Box>
 
-          {/* DERECHA: Imagen */}
-          {/* DERECHA: Imagen */}
+          {/* Imagen */}
           <Box
             sx={{
               flex: 1,
@@ -129,14 +148,13 @@ export default function FaqSection() {
               src={faqImage}
               alt="FAQ ilustrativa"
               sx={{
-                width: { xs: "90%", md: "100%" },  
-                maxWidth: 520,                     
+                width: { xs: "90%", md: "100%" },
+                maxWidth: 520,
                 borderRadius: 3,
                 boxShadow: 4,
               }}
             />
           </Box>
-
         </Box>
       </Box>
     </Box>

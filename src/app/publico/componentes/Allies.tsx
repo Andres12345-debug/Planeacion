@@ -61,7 +61,7 @@ export default function AlliedEntitiesSection() {
   const itemWidth = 100 / itemsPerView;
 
   return (
-    <Box sx={{ width: "100%", py: 8, px: { xs: 2, sm: 6 }, bgcolor: "background.paper" }}>
+    <Box sx={{ width: "100%", py: 8, px: { xs: 2, sm: 6 }}}>
       {/* Header */}
       <Box sx={{ textAlign: "center", mb: 5 }}>
         <Typography
