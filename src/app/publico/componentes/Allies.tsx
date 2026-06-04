@@ -4,12 +4,11 @@ import {
   Box,
   Typography,
   IconButton,
-  Card,
-  CardContent,
   CardMedia,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
+import CardSistema from "../../compartido/ui/CardSistema";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 
@@ -103,9 +102,23 @@ export default function AlliedEntitiesSection() {
             }}
           >
             {allies.map((ally, idx) => (
-              <Card
+              <CardSistema
                 key={ally.name + idx}
                 elevation={3}
+                hoverable={false}
+                media={
+                  <CardMedia
+                    component="img"
+                    image={ally.logo}
+                    alt={ally.name}
+                    sx={{
+                      maxHeight: 90,
+                      maxWidth: "90%",
+                      objectFit: "contain",
+                      filter: theme.palette.mode === "dark" ? "brightness(.95) saturate(.9)" : "none",
+                    }}
+                  />
+                }
                 sx={{
                   m: 0,
                   borderRadius: 3,
@@ -121,43 +134,18 @@ export default function AlliedEntitiesSection() {
                   },
                 }}
               >
-                <CardContent
+                <Typography
+                  variant="subtitle2"
                   sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 1,
-                    p: 0,
-                    width: "100%",
+                    mt: 1.2,
+                    fontWeight: 700,
+                    textAlign: "center",
+                    color: "text.primary",
                   }}
                 >
-                  <CardMedia
-                    component="img"
-                    image={ally.logo}
-                    alt={ally.name}
-                    sx={{
-                      maxHeight: 90,
-                      maxWidth: "90%",
-                      objectFit: "contain",
-                      filter:
-                        theme.palette.mode === "dark"
-                          ? "brightness(.95) saturate(.9)"
-                          : "none",
-                    }}
-                  />
-                  <Typography
-                    variant="subtitle2"
-                    sx={{
-                      mt: 1.2,
-                      fontWeight: 700,
-                      textAlign: "center",
-                      color: "text.primary",
-                    }}
-                  >
-                    {ally.name}
-                  </Typography>
-                </CardContent>
-              </Card>
+                  {ally.name}
+                </Typography>
+              </CardSistema>
             ))}
           </Box>
         </Box>

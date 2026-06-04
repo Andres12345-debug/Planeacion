@@ -1,5 +1,6 @@
 import React from "react";
-import { Box, Card, CardContent, Typography, Divider, Pagination } from "@mui/material";
+import { Box, Typography, Divider, Pagination } from "@mui/material";
+import CardSistema from "../../compartido/ui/CardSistema";
 
 // Íconos de Material UI (más representativos)
 import DescriptionIcon from "@mui/icons-material/Description";
@@ -118,44 +119,12 @@ export default function FeaturesSection() {
         }}
       >
         {selectedFeatures.map((feature, i) => (
-          <Card
+          <CardSistema
             key={i}
-            sx={{
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "grey.800" : "grey.300",
-              width: { xs: "100%", sm: "30%" },
-              minWidth: 250,
-              textAlign: "center",
-              p: 2,
-              cursor: "pointer",
-              borderRadius: 4,
-              transition: "transform 0.3s ease",
-              "&:hover": {
-                transform: "rotate(3deg) scale(1.03)",
-              },
-            }}
-          >
-            <CardContent>
-              {/* Ícono con hover independiente */}
-              <Box
-                sx={{
-                  mb: 1,
-                  transition: "transform .35s ease",
-                  ".MuiCard-root:hover &": {
-                    transform: "rotate(10deg) scale(1.2)",
-                  },
-                }}
-              >
-                {feature.icon}
-              </Box>
-
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                {feature.title}
-              </Typography>
-              <Divider sx={{ mb: 1 }} />
-              <Typography variant="body2">{feature.description}</Typography>
-            </CardContent>
-          </Card>
+            icon={feature.icon}
+            title={feature.title}
+            description={feature.description}
+          />
         ))}
       </Box>
 

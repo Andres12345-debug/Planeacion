@@ -4,8 +4,6 @@ import {
   Avatar,
   Typography,
   Button,
-  Card,
-  CardContent,
   CardActions,
   IconButton,
   LinearProgress,
@@ -13,6 +11,7 @@ import {
   Tooltip,
   useTheme,
 } from "@mui/material";
+import CardSistema from "../compartido/ui/CardSistema";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -160,7 +159,7 @@ export default function ProfileSection({
           }}
         >
           {processes.map((p) => (
-            <Card
+            <CardSistema
               key={p.id}
               elevation={3}
               sx={{
@@ -171,7 +170,7 @@ export default function ProfileSection({
                 "&:hover": { transform: "translateY(-6px)", boxShadow: 8 },
               }}
             >
-              <CardContent>
+              <>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                   {p.title}
                 </Typography>
@@ -200,23 +199,25 @@ export default function ProfileSection({
                     {p.progress ?? 0}% completado
                   </Typography>
                 </Box>
-              </CardContent>
 
-              <Box sx={{ flexGrow: 1 }} />
+                <Box sx={{ flexGrow: 1 }} />
+              </>
 
-              <CardActions sx={{ px: 2, py: 1.25 }}>
-                <Tooltip title="Ver">
-                  <IconButton size="small" onClick={() => onView?.(p)}>
-                    <VisibilityIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Descargar">
-                  <IconButton size="small" onClick={() => onDownload?.(p)}>
-                    <DownloadIcon />
-                  </IconButton>
-                </Tooltip>
-              </CardActions>
-            </Card>
+              {
+                <CardActions sx={{ px: 2, py: 1.25 }}>
+                  <Tooltip title="Ver">
+                    <IconButton size="small" onClick={() => onView?.(p)}>
+                      <VisibilityIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Descargar">
+                    <IconButton size="small" onClick={() => onDownload?.(p)}>
+                      <DownloadIcon />
+                    </IconButton>
+                  </Tooltip>
+                </CardActions>
+              }
+            </CardSistema>
           ))}
         </Box>
       ) : (
