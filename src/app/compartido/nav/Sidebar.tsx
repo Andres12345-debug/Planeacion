@@ -27,6 +27,7 @@ import {
 } from "@mui/icons-material";
 
 import { useNavigate, useLocation } from "react-router-dom";
+import { tokenHelper } from "../../utilidades/auth/tokenHelper";
 
 const drawerWidth = 240;
 const collapsedWidth = 72;
@@ -63,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     location.pathname.startsWith(path);
 
   const cerrarSesion = () => {
-    localStorage.removeItem("TOKEN_AUTORIZACION");
+    tokenHelper.remove();
     navigate("/");
   };
 

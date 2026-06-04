@@ -1,22 +1,18 @@
 import { Outlet } from "react-router-dom";
-import { Box, Toolbar } from "@mui/material";
+import { Box } from "@mui/material";
 
 import SmallNav from "../nav/SmallNav";
-import BasicTable from "../nav/Nav";
+import TopNavigation from "../nav/Nav";
 import Footer from "../footer/Footer";
 
 export const MainLayout = () => {
   return (
     <Box>
-      {/* NAV SUPERIOR */}
       <SmallNav />
-      <BasicTable />
-      {/* CONTENIDO */}
+      <TopNavigation />
       <Box>
         <Outlet />
       </Box>
-
-      {/* FOOTER */}
       <Footer />
     </Box>
   );

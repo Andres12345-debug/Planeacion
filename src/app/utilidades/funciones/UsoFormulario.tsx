@@ -5,7 +5,9 @@ export const useFormulario = <T extends Object>(objetoInicial: T) => {
 
     const dobleEnlace = ({ target }: ChangeEvent<any>) => {
         const { name, value } = target;
-        setObjeto({ ...objeto, [name]: value });
+        // Sanitización básica: remover caracteres potencialmente peligrosos
+        const sanitizedValue = value.replace(/[<>\"'&]/g, '');
+        setObjeto({ ...objeto, [name]: sanitizedValue });
     }
 
     return {

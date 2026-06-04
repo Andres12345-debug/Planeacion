@@ -13,6 +13,7 @@ import {
 import { crearMensaje } from "../../utilidades/funciones/mensaje";
 import { AccesoServicio } from "../../../app/servicios/publicos/AccesoServicio";
 import { useNavigate } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const RecuperarContrasenia = () => {
   const theme = useTheme();
@@ -20,12 +21,25 @@ const RecuperarContrasenia = () => {
 
   const [correoUsuario, setCorreoUsuario] = useState("");
   const [loading, setLoading] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
 
   const enviarSolicitud = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!correoUsuario) {
       crearMensaje("warning", "Ingresa tu correo");
+      return;
+    }
+
+    // Validación de formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correoUsuario)) {
+      crearMensaje("warning", "Ingresa un correo electrónico válido");
+      return;
+    }
+
+    if (!recaptchaToken) {
+      crearMensaje("warning", "Completa el reCAPTCHA");
       return;
     }
 
@@ -88,6 +102,13 @@ const RecuperarContrasenia = () => {
               fullWidth
               value={correoUsuario}
               onChange={(e) => setCorreoUsuario(e.target.value)}
+            />
+
+            {/* reCAPTCHA */}
+            <ReCAPTCHA
+              sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Clave de prueba de Google
+              onChange={setRecaptchaToken}
+              onExpired={() => setRecaptchaToken(null)}
             />
 
             <Button

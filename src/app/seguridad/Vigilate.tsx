@@ -1,19 +1,28 @@
 import { jwtDecode } from "jwt-decode";
 import { Navigate, Outlet } from "react-router-dom";
+import { tokenHelper } from "../utilidades/auth/tokenHelper";
 
-type rutasVigilante = {children?: any};
-export const Vigilante = ({children}: rutasVigilante) =>{
-    const token = localStorage.getItem("TOKEN_AUTORIZACION")
-    if(token){
-        try{
-            jwtDecode(token);
-        }catch(error){
-            return <Navigate to="/login"></Navigate>
-        }       
+type RutasVigilante = { children?: any };
 
-    }else{
-        return <Navigate to="/login"/>
-    }
-    return children ? children: <Outlet></Outlet>
-
+interface TokenPayload {
+  exp?: number;
 }
+
+export const Vigilante = ({ children }: RutasVigilante) => {
+  const token = tokenHelper.get();
+
+  if (!token) return <Navigate to="/login" replace />;
+
+  try {
+    const decoded = jwtDecode<TokenPayload>(token);
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+      tokenHelper.remove();
+      return <Navigate to="/login" replace />;
+    }
+  } catch {
+    tokenHelper.remove();
+    return <Navigate to="/login" replace />;
+  }
+
+  return children ?? <Outlet />;
+};

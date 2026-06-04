@@ -19,6 +19,7 @@ const NuevaContrasenia = () => {
   const theme = useTheme();
 
   const [nuevaClave, setNuevaClave] = useState(""); // Estado para la nueva contraseña
+  const [confirmarClave, setConfirmarClave] = useState(""); // Estado para confirmar contraseña
   const [loading, setLoading] = useState(false); // Estado para cargar mientras se envía la solicitud
 
   const cambiarPassword = async (e: React.FormEvent) => {
@@ -30,10 +31,20 @@ const NuevaContrasenia = () => {
       return;
     }
 
-    // Validación de contraseña (al menos 8 caracteres, 1 mayúscula, 1 número)
-    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!confirmarClave) {
+      crearMensaje("warning", "Confirma la nueva contraseña");
+      return;
+    }
+
+    if (nuevaClave !== confirmarClave) {
+      crearMensaje("warning", "Las contraseñas no coinciden");
+      return;
+    }
+
+    // Validación de contraseña mejorada (al menos 8 caracteres, 1 mayúscula, 1 minúscula, 1 número, 1 carácter especial)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(nuevaClave)) {
-      crearMensaje("warning", "La contraseña debe tener al menos 8 caracteres, incluir una mayúscula y un número.");
+      crearMensaje("warning", "La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, una minúscula, un número y un carácter especial.");
       return;
     }
 
@@ -86,6 +97,14 @@ const NuevaContrasenia = () => {
               fullWidth
               value={nuevaClave}
               onChange={(e) => setNuevaClave(e.target.value)} // Actualiza el estado con la nueva contraseña
+            />
+
+            <TextField
+              label="Confirmar nueva contraseña"
+              type="password"
+              fullWidth
+              value={confirmarClave}
+              onChange={(e) => setConfirmarClave(e.target.value)} // Actualiza el estado con la confirmación
             />
 
             <Button type="submit" variant="contained" disabled={loading} sx={{ py: 1.5, fontWeight: 700 }}>

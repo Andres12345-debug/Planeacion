@@ -1,22 +1,17 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import { MainLayout } from "../app/compartido/layout/MainLayout";
 import { DashboardLayout } from "../app/privado/compartido/DashboardLayout";
+import { Vigilante } from "../app/seguridad/Vigilate";
 import RecuperarContrasenia from "../app/publico/componentes/RecuperarContrasenia";
 import NuevaContrasenia from "../app/publico/componentes/NuevaContrasenia";
+import Registro from "../app/publico/paginas/Registro";
 
-// Lazy
 const Login = lazy(() => import("../app/publico/paginas/IniciarSesion"));
 const Welcome = lazy(() => import("../app/publico/paginas/Welcome"));
 const Dashboard = lazy(() => import("../app/privado/TableroPrincipal"));
 const Error = lazy(() => import("../app/compartido/Error"));
-
-// 🔐 Guard básico
-const PrivateRoute = ({ children }: any) => {
-  const token = localStorage.getItem("TOKEN_AUTORIZACION");
-  return token ? children : <Navigate to="/login" replace />;
-};
 
 export const RuteoPrincipal = () => {
   return (
@@ -28,6 +23,9 @@ export const RuteoPrincipal = () => {
           <Route path="/" element={<Welcome />} />
           <Route path="/login" element={<Login />} />
 
+          {/* REGISTRO */}
+          <Route path="/registro" element={<Registro />} />
+
           {/* 🔐 RECUPERAR PASSWORD */}
           <Route path="/recuperar-password" element={<RecuperarContrasenia />} />
 
@@ -38,9 +36,9 @@ export const RuteoPrincipal = () => {
         {/* 🔐 PRIVADO */}
         <Route
           element={
-            <PrivateRoute>
+            <Vigilante>
               <DashboardLayout />
-            </PrivateRoute>
+            </Vigilante>
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />

@@ -22,44 +22,39 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import ReCAPTCHA from "react-google-recaptcha";
 
-// ✅ Modelo correcto
 import { Login } from "../../modelos/InicioSesion";
-
-// ✅ Servicio
-import { AccesoServicio } from "../../../app/servicios/publicos/AccesoServicio";
-
-// ✅ Hook formulario
+import { AccesoServicio } from "../../servicios/publicos/AccesoServicio";
 import { useFormulario } from "../../utilidades/funciones/UsoFormulario";
-
-// ✅ Mensajes
 import { crearMensaje } from "../../utilidades/funciones/mensaje";
+import { tokenHelper } from "../../utilidades/auth/tokenHelper";
 
-// Token
 interface TokenPayload {
-  id: number;
-  nombre: string;
-  rol: string;
-  telefono: string;
-  acceso: string;
+  sub: number;
+  name: string;
+  nombre_rol: string;
+  cod_entidad: number | null;
+  cod_departamento: number | null;
+  exp?: number;
 }
 
 const InicioSesion = () => {
   const [enProceso, setEnProceso] = useState(false);
   const [mostrarClave, setMostrarClave] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const theme = useTheme();
   const navegacion = useNavigate();
 
-  // ✅ Formulario alineado con backend
-  const { cedula, claveAcceso, dobleEnlace } = useFormulario<Login>({
-    cedula: "",
+  const { username, claveAcceso, dobleEnlace } = useFormulario<Login>({
+    username: "",
     claveAcceso: "",
   });
 
-  // ✅ Validación
   const formularioValido =
-    cedula.trim().length > 0 &&
-    claveAcceso.trim().length > 0;
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username.trim()) &&
+    claveAcceso.trim().length >= 8 &&
+    recaptchaToken !== null;
 
   // ✅ Submit
   const enviarFormulario = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -70,7 +65,7 @@ const InicioSesion = () => {
 
     try {
       const respuesta = await AccesoServicio.iniciarSesion({
-        cedula,
+        username,
         claveAcceso,
       });
 
@@ -80,9 +75,9 @@ const InicioSesion = () => {
 
       const datosToken = jwtDecode<TokenPayload>(token);
 
-      localStorage.setItem("TOKEN_AUTORIZACION", token);
+      tokenHelper.set(token);
 
-      crearMensaje("success", `¡Bienvenido, ${datosToken.nombre}!`);
+      crearMensaje("success", `¡Bienvenido, ${datosToken.name}!`);
 
       navegacion("/dashboard", { replace: true });
     } catch (error) {
@@ -180,11 +175,12 @@ const InicioSesion = () => {
 
           <Box component="form" onSubmit={enviarFormulario}>
             <Stack spacing={3}>
-              {/* CÉDULA */}
+              {/* CORREO */}
               <TextField
-                label="Cédula"
-                name="cedula"
-                value={cedula}
+                label="Correo electrónico"
+                name="username"
+                type="email"
+                value={username}
                 onChange={dobleEnlace}
                 fullWidth
                 sx={{
@@ -242,6 +238,13 @@ const InicioSesion = () => {
                 }}
               />
 
+              {/* reCAPTCHA */}
+              <ReCAPTCHA
+                sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Clave de prueba de Google
+                onChange={setRecaptchaToken}
+                onExpired={() => setRecaptchaToken(null)}
+              />
+
               {/* BOTÓN */}
               <Button
                 type="submit"
@@ -262,8 +265,19 @@ const InicioSesion = () => {
                 {enProceso ? "Autenticando..." : "Entrar"}
               </Button>
 
-              {/* 🔥 OLVIDÓ CONTRASEÑA */}
-              <Box sx={{ textAlign: "right", mt: 1 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1 }}>
+                <Button
+                  variant="text"
+                  onClick={() => navegacion("/registro")}
+                  sx={{
+                    textTransform: "none",
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                    color: theme.palette.text.secondary,
+                  }}
+                >
+                  ¿No tienes cuenta? Regístrate
+                </Button>
                 <Button
                   variant="text"
                   onClick={() => navegacion("/recuperar-password")}
@@ -274,7 +288,7 @@ const InicioSesion = () => {
                     color: theme.palette.secondary.main,
                   }}
                 >
-                  ¿Se te ha olvidado la contraseña?
+                  ¿Olvidaste tu contraseña?
                 </Button>
               </Box>
             </Stack>

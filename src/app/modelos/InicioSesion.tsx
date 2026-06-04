@@ -1,4 +1,4 @@
 export interface Login {
-  cedula: string;
+  username: string;
   claveAcceso: string;
 }

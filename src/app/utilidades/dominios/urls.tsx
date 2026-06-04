@@ -7,6 +7,6 @@ export const URLS = {
     INICIAR_SESION: "/publico/auth/login",
     REGISTRO: "/publico/registros/user",
 
-    RECUPERAR_PASSWORD: "/registros/recuperar-password",
-    NUEVA_PASSWORD: "registros/nueva-password"
+    RECUPERAR_PASSWORD: "/publico/registros/recuperar-password",
+    NUEVA_PASSWORD: "/publico/registros/nueva-password"
 }
