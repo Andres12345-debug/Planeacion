@@ -209,31 +209,32 @@ export default function ImageCarousel({
                 inset: 0,
                 pointerEvents: "none",
                 background:
-                  "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.45) 60%)",
+                  "linear-gradient(180deg, rgba(0,0,0,0) 20%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.65) 100%)",
               }}
             />
 
+            {/* Texto del slide — márgenes responsivos consistentes con el resto del sitio */}
             <Box
               sx={{
                 position: "absolute",
-                left: { xs: 16, sm: 28 },
-                bottom: { xs: 18, sm: 28 },
-                right: { xs: 16, sm: "auto" },
+                left: { xs: "5%", sm: "7%", md: "8%" },
+                right: { xs: "5%", sm: "auto" },
+                bottom: { xs: 72, sm: 96, md: 120 },
                 color: "common.white",
                 pointerEvents: "auto",
-                maxWidth: { xs: "80%", sm: "60%", md: "50%" },
-                textShadow: "0 4px 18px rgba(0,0,0,0.35)",
+                maxWidth: { xs: "90%", sm: "58%", md: "48%" },
+                textShadow: "0 2px 16px rgba(0,0,0,0.55)",
               }}
             >
               {s.title && (
                 <Typography
                   component="h1"
-                  variant="h4"
                   sx={{
                     fontWeight: 800,
-                    mb: 1,
-                    fontSize: { xs: "1.25rem", sm: "1.75rem", md: "2.25rem" },
-                    lineHeight: 1.05,
+                    mb: { xs: 1, sm: 1.5 },
+                    fontSize: { xs: "1.35rem", sm: "1.85rem", md: "2.5rem" },
+                    lineHeight: 1.15,
+                    letterSpacing: -0.5,
                   }}
                 >
                   {s.title}
@@ -242,13 +243,13 @@ export default function ImageCarousel({
 
               {s.caption && (
                 <Typography
-                  variant="body1"
                   sx={{
-                    mb: 2,
-                    fontSize: { xs: "0.95rem", sm: "1.05rem" },
-                    lineHeight: 1.4,
-                    fontWeight: 500,
-                    color: "rgba(255,255,255,0.95)",
+                    mb: { xs: 2, sm: 3 },
+                    fontSize: { xs: "0.9rem", sm: "1rem", md: "1.1rem" },
+                    lineHeight: 1.55,
+                    fontWeight: 400,
+                    color: "rgba(255,255,255,0.90)",
+                    maxWidth: { sm: "80%" },
                   }}
                 >
                   {s.caption}
@@ -262,13 +263,12 @@ export default function ImageCarousel({
                   href={s.ctaHref}
                   sx={{
                     color: "common.white",
-                    textTransform: "none",
-                    fontSize: { xs: "0.95rem", sm: "1.05rem" },
-                    px: 3,
-                    py: 1,
-                    borderRadius: 2,
-                    boxShadow: 3,
-                    "&:hover": { transform: "translateY(-3px)", boxShadow: 6 },
+                    fontSize: { xs: "0.875rem", sm: "0.95rem" },
+                    px: { xs: 3, sm: 4 },
+                    py: { xs: 1, sm: 1.25 },
+                    boxShadow: 4,
+                    "&:hover": { transform: "translateY(-2px)", boxShadow: 8 },
+                    transition: "transform 200ms ease, box-shadow 200ms ease",
                   }}
                 >
                   {s.ctaText}
