@@ -80,7 +80,7 @@ const InicioSesion = () => {
           display: { xs: "none", md: "flex" },
           background:
             theme.palette.mode === "light"
-              ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, #4338ca 100%)`
+              ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, #484182 100%)`
               : `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`,
           flexDirection: "column",
           justifyContent: "center",
