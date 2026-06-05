@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import { MainLayout } from "../app/compartido/layout/MainLayout";
 import { DashboardLayout } from "../app/privado/compartido/DashboardLayout";
 import { Vigilante } from "../app/seguridad/Vigilate";
+import { GuardiaRol } from "../app/seguridad/GuardiaRol";
 import RecuperarContrasenia from "../app/publico/componentes/RecuperarContrasenia";
 import NuevaContrasenia from "../app/publico/componentes/NuevaContrasenia";
 import Registro from "../app/publico/paginas/Registro";
@@ -12,6 +13,10 @@ const Login = lazy(() => import("../app/publico/paginas/IniciarSesion"));
 const Welcome = lazy(() => import("../app/publico/paginas/Welcome"));
 const Dashboard = lazy(() => import("../app/privado/TableroPrincipal"));
 const Error = lazy(() => import("../app/compartido/Error"));
+
+// Admin — Workflows
+const WorkflowLista = lazy(() => import("../app/privado/admin/workflows/WorkflowLista"));
+const WorkflowCrear = lazy(() => import("../app/privado/admin/workflows/WorkflowCrear"));
 
 export const RuteoPrincipal = () => {
   return (
@@ -42,6 +47,13 @@ export const RuteoPrincipal = () => {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
+
+          {/* Admin — solo rol "admin" */}
+          <Route element={<GuardiaRol rolesPermitidos={["admin"]} />}>
+            <Route path="/dashboard/admin/workflows" element={<WorkflowLista />} />
+            <Route path="/dashboard/admin/workflows/crear" element={<WorkflowCrear />} />
+          </Route>
+
           <Route path="/dashboard/*" element={<Error />} />
         </Route>
 

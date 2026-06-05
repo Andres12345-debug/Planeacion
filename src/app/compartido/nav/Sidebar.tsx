@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Drawer,
   List,
@@ -11,7 +11,6 @@ import {
   Tooltip,
   Typography,
   Avatar,
-  Chip,
   Divider,
   useTheme,
   useMediaQuery,
@@ -21,93 +20,130 @@ import {
   Dashboard as DashboardIcon,
   FolderOpen as TramitesIcon,
   People as PeopleIcon,
-  Settings as SettingsIcon,
   ExpandLess,
   ExpandMore,
   Logout as LogoutIcon,
   ChevronLeft,
   ChevronRight,
   Assignment as AsignacionIcon,
+  AccountTree as WorkflowIcon,
+  SupervisorAccount as SupervisorIcon,
+  Visibility as VisitanteIcon,
+  HomeWork as BrandIcon,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { tokenHelper } from "../../utilidades/auth/tokenHelper";
 
-const DRAWER_WIDTH = 260;
-const COLLAPSED_WIDTH = 72;
+// ── Constantes ────────────────────────────────────────────────────────────────
+
+const DRAWER_WIDTH = 268;
+const COLLAPSED_WIDTH = 68;
+
+// ── Tipos ─────────────────────────────────────────────────────────────────────
 
 interface TokenPayload {
   name: string;
   nombre_rol: string;
 }
 
-const ETIQUETA_ROL: Record<string, string> = {
-  admin: "Administrador",
-  supervisor: "Supervisor",
-  funcionario: "Funcionario",
-  ciudadano: "Ciudadano",
-  visitante: "Visitante",
-};
-
-function useUsuario() {
-  const token = tokenHelper.get();
-  if (!token) return null;
-  try {
-    return jwtDecode<TokenPayload>(token);
-  } catch {
-    return null;
-  }
-}
-
-function iniciales(nombre: string) {
-  return nombre
-    .split(" ")
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase();
+interface SubItem {
+  label: string;
+  path: string;
 }
 
 interface MenuItem {
   label: string;
   icon: React.ReactNode;
   path?: string;
-  children?: { label: string; path: string }[];
+  children?: SubItem[];
+  seccion?: string; // encabezado de grupo que aparece sobre este ítem
 }
 
-const MENU: MenuItem[] = [
+// ── Menús por rol ─────────────────────────────────────────────────────────────
+
+const MENU_ADMIN: MenuItem[] = [
+  { label: "Inicio",    icon: <DashboardIcon />, path: "/dashboard" },
   {
-    label: "Inicio",
-    icon: <DashboardIcon fontSize="small" />,
-    path: "/dashboard",
+    label: "Workflows", icon: <WorkflowIcon />, seccion: "Administración",
+    children: [
+      { label: "Listar workflows", path: "/dashboard/admin/workflows" },
+      { label: "Crear workflow",   path: "/dashboard/admin/workflows/crear" },
+    ],
   },
   {
-    label: "Trámites",
-    icon: <TramitesIcon fontSize="small" />,
+    label: "Usuarios", icon: <PeopleIcon />,
     children: [
-      { label: "Mis trámites", path: "/dashboard/tramites" },
+      { label: "Listado",         path: "/dashboard/admin/usuarios" },
+      { label: "Agregar usuario", path: "/dashboard/admin/usuarios/crear" },
+    ],
+  },
+  { label: "Trámites", icon: <TramitesIcon />, path: "/dashboard/admin/tramites", seccion: "Operaciones" },
+];
+
+const MENU_SUPERVISOR: MenuItem[] = [
+  { label: "Inicio",      icon: <DashboardIcon />,  path: "/dashboard" },
+  { label: "Trámites",   icon: <TramitesIcon />,   path: "/dashboard/tramites", seccion: "Mi departamento" },
+  {
+    label: "Usuarios", icon: <SupervisorIcon />,
+    children: [{ label: "Agregar funcionario", path: "/dashboard/supervisor/usuarios/crear" }],
+  },
+  { label: "Asignaciones", icon: <AsignacionIcon />, path: "/dashboard/asignaciones" },
+];
+
+const MENU_FUNCIONARIO: MenuItem[] = [
+  { label: "Inicio",       icon: <DashboardIcon />,  path: "/dashboard" },
+  { label: "Trámites",    icon: <TramitesIcon />,   path: "/dashboard/tramites",    seccion: "Trabajo" },
+  { label: "Asignaciones", icon: <AsignacionIcon />, path: "/dashboard/asignaciones" },
+];
+
+const MENU_CIUDADANO: MenuItem[] = [
+  { label: "Inicio", icon: <DashboardIcon />, path: "/dashboard" },
+  {
+    label: "Trámites", icon: <TramitesIcon />, seccion: "Mis gestiones",
+    children: [
+      { label: "Mis trámites",   path: "/dashboard/tramites" },
       { label: "Iniciar trámite", path: "/dashboard/tramites/nuevo" },
     ],
   },
-  {
-    label: "Asignaciones",
-    icon: <AsignacionIcon fontSize="small" />,
-    path: "/dashboard/asignaciones",
-  },
-  {
-    label: "Usuarios",
-    icon: <PeopleIcon fontSize="small" />,
-    children: [
-      { label: "Listado", path: "/dashboard/usuarios" },
-      { label: "Agregar", path: "/dashboard/usuarios/crear" },
-    ],
-  },
-  {
-    label: "Configuración",
-    icon: <SettingsIcon fontSize="small" />,
-    path: "/dashboard/configuracion",
-  },
 ];
+
+const MENU_VISITANTE: MenuItem[] = [
+  { label: "Inicio",    icon: <DashboardIcon />,  path: "/dashboard" },
+  { label: "Trámites", icon: <VisitanteIcon />, path: "/dashboard/tramites", seccion: "Consulta" },
+];
+
+const MENUS_POR_ROL: Record<string, MenuItem[]> = {
+  admin: MENU_ADMIN,
+  supervisor: MENU_SUPERVISOR,
+  funcionario: MENU_FUNCIONARIO,
+  ciudadano: MENU_CIUDADANO,
+  visitante: MENU_VISITANTE,
+};
+
+// ── Colores por rol ───────────────────────────────────────────────────────────
+
+const ROL_CONFIG: Record<string, { label: string; color: string }> = {
+  admin:       { label: "Administrador", color: "#f59e0b" },
+  supervisor:  { label: "Supervisor",    color: "#14b8a6" },
+  funcionario: { label: "Funcionario",   color: "#3b82f6" },
+  ciudadano:   { label: "Ciudadano",     color: "#8b5cf6" },
+  visitante:   { label: "Visitante",     color: "#64748b" },
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function useUsuario() {
+  const token = tokenHelper.get();
+  if (!token) return null;
+  try { return jwtDecode<TokenPayload>(token); } catch { return null; }
+}
+
+function iniciales(nombre: string) {
+  return nombre.split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase();
+}
+
+// ── Props ─────────────────────────────────────────────────────────────────────
 
 interface SidebarProps {
   open: boolean;
@@ -116,265 +152,407 @@ interface SidebarProps {
   setCollapsed: (v: boolean) => void;
 }
 
+// ── Componente ────────────────────────────────────────────────────────────────
+
 const Sidebar: React.FC<SidebarProps> = ({ open, onClose, collapsed, setCollapsed }) => {
-  const theme = useTheme();
+  const theme    = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const navigate = useNavigate();
-  const location = useLocation();
-  const usuario = useUsuario();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const usuario   = useUsuario();
+
+  const menu = useMemo<MenuItem[]>(
+    () => MENUS_POR_ROL[usuario?.nombre_rol ?? ""] ?? MENU_CIUDADANO,
+    [usuario?.nombre_rol],
+  );
 
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setOpenMenus((prev) => {
+      const next = { ...prev };
+      menu.forEach((item) => {
+        if (item.children?.some((c) => location.pathname.startsWith(c.path))) {
+          next[item.label] = true;
+        }
+      });
+      return next;
+    });
+  }, [location.pathname, menu]);
 
   const toggleSubMenu = (key: string) =>
     setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive       = (path: string)   => location.pathname === path;
   const isParentActive = (item: MenuItem) =>
     item.children?.some((c) => location.pathname.startsWith(c.path)) ?? false;
 
-  const ir = (path: string) => {
-    navigate(path);
-    if (isMobile) onClose();
+  const ir = (path: string) => { navigate(path); if (isMobile) onClose(); };
+  const cerrarSesion = () => { tokenHelper.remove(); navigate("/"); };
+
+  // ── Colores ────────────────────────────────────────────────────────────────
+
+  const bg          = "#0f172a";               // slate-900 siempre
+  const textPrimary = "#e2e8f0";               // slate-200
+  const textMuted   = "#64748b";               // slate-500
+  const activeBg    = theme.palette.primary.main;
+  const hoverBg     = alpha("#ffffff", 0.05);
+  const subLineBg   = alpha("#ffffff", 0.08);
+  const rolColor    = ROL_CONFIG[usuario?.nombre_rol ?? ""]?.color ?? textMuted;
+
+  // ── Item principal ─────────────────────────────────────────────────────────
+
+  const renderItem = (item: MenuItem) => {
+    const hasChildren = !!item.children;
+    const active      = item.path ? isActive(item.path) : isParentActive(item);
+    const isOpen      = !!openMenus[item.label];
+
+    return (
+      <Box key={item.label}>
+        {/* Encabezado de sección */}
+        {item.seccion && !collapsed && (
+          <Typography
+            variant="overline"
+            sx={{
+              display: "block",
+              px: 2.5,
+              pt: 2,
+              pb: 0.5,
+              color: textMuted,
+              fontSize: "0.65rem",
+              letterSpacing: 1.4,
+              userSelect: "none",
+            }}
+          >
+            {item.seccion}
+          </Typography>
+        )}
+
+        <Tooltip title={collapsed ? item.label : ""} placement="right" arrow>
+          <ListItemButton
+            onClick={() => { if (hasChildren) toggleSubMenu(item.label); else if (item.path) ir(item.path); }}
+            sx={{
+              mx: 1.5,
+              my: 0.25,
+              borderRadius: 2,
+              px: collapsed ? 0 : 1.5,
+              minHeight: 42,
+              justifyContent: collapsed ? "center" : "flex-start",
+              gap: 0,
+              color: active ? "#fff" : textPrimary,
+              bgcolor: active ? activeBg : "transparent",
+              boxShadow: active
+                ? `0 4px 14px ${alpha(activeBg, 0.45)}`
+                : "none",
+              "&:hover": {
+                bgcolor: active ? activeBg : hoverBg,
+                "& .menu-icon": { color: "#fff" },
+              },
+              transition: "background-color 0.15s, box-shadow 0.15s",
+            }}
+          >
+            <ListItemIcon
+              className="menu-icon"
+              sx={{
+                minWidth: 0,
+                mr: collapsed ? 0 : 1.5,
+                justifyContent: "center",
+                color: active ? "#fff" : alpha(textPrimary, 0.7),
+                "& svg": { fontSize: "1.2rem" },
+                transition: "color 0.15s",
+              }}
+            >
+              {item.icon}
+            </ListItemIcon>
+
+            {!collapsed && (
+              <>
+                <ListItemText
+                  primary={item.label}
+                  slotProps={{
+                    primary: {
+                      fontSize: "0.85rem",
+                      fontWeight: active ? 700 : 500,
+                      lineHeight: 1,
+                    },
+                  }}
+                  sx={{ my: 0 }}
+                />
+                {hasChildren && (
+                  isOpen
+                    ? <ExpandLess sx={{ fontSize: "1rem", color: active ? "#fff" : textMuted }} />
+                    : <ExpandMore sx={{ fontSize: "1rem", color: active ? "#fff" : textMuted }} />
+                )}
+              </>
+            )}
+          </ListItemButton>
+        </Tooltip>
+
+        {/* Sub-ítems */}
+        {hasChildren && !collapsed && (
+          <Collapse in={isOpen} timeout="auto" unmountOnExit>
+            <List disablePadding sx={{ position: "relative", ml: 3.5, mr: 1.5, mt: 0.25, mb: 0.5 }}>
+              {/* Línea vertical conectora */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: 12,
+                  top: 4,
+                  bottom: 4,
+                  width: "1px",
+                  bgcolor: subLineBg,
+                  borderRadius: 1,
+                }}
+              />
+              {item.children!.map((sub) => {
+                const subActive = isActive(sub.path);
+                return (
+                  <ListItemButton
+                    key={sub.path}
+                    onClick={() => ir(sub.path)}
+                    sx={{
+                      borderRadius: 1.5,
+                      pl: 3,
+                      pr: 1,
+                      py: 0.6,
+                      minHeight: 34,
+                      color: subActive ? "#fff" : alpha(textPrimary, 0.65),
+                      bgcolor: subActive ? alpha(activeBg, 0.9) : "transparent",
+                      "&:hover": {
+                        bgcolor: subActive ? alpha(activeBg, 0.9) : hoverBg,
+                        color: "#fff",
+                      },
+                      transition: "background-color 0.15s",
+                    }}
+                  >
+                    {/* Nodo en la línea */}
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        left: 8,
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        border: `2px solid`,
+                        borderColor: subActive ? activeBg : subLineBg,
+                        bgcolor: subActive ? activeBg : bg,
+                        transition: "border-color 0.15s, background-color 0.15s",
+                      }}
+                    />
+                    <ListItemText
+                      primary={sub.label}
+                      slotProps={{
+                        primary: {
+                          fontSize: "0.8rem",
+                          fontWeight: subActive ? 700 : 400,
+                        },
+                      }}
+                      sx={{ my: 0 }}
+                    />
+                  </ListItemButton>
+                );
+              })}
+            </List>
+          </Collapse>
+        )}
+      </Box>
+    );
   };
 
-  const cerrarSesion = () => {
-    tokenHelper.remove();
-    navigate("/");
-  };
-
-  // Estilos reutilizables
-  const itemActiveBg = alpha(theme.palette.primary.main, 0.25);
-  const itemHoverBg = alpha("#ffffff", 0.06);
-  const textColor = theme.palette.sidebar.contrastText;
-  const iconColor = theme.palette.sidebar.contrastText;
-
-  const itemSx = (active: boolean) => ({
-    mx: 1,
-    my: 0.25,
-    borderRadius: 2,
-    px: collapsed ? 0 : 1.5,
-    justifyContent: collapsed ? "center" : "flex-start",
-    color: textColor,
-    backgroundColor: active ? itemActiveBg : "transparent",
-    borderLeft: active ? `3px solid ${theme.palette.primary.light}` : "3px solid transparent",
-    "&:hover": { backgroundColor: active ? itemActiveBg : itemHoverBg },
-    transition: "background-color 0.2s, border-color 0.2s",
-    minHeight: 44,
-  });
-
-  const iconSx = {
-    minWidth: 0,
-    mr: collapsed ? 0 : 1.5,
-    color: iconColor,
-    justifyContent: "center",
-  };
+  // ── Contenido del drawer ───────────────────────────────────────────────────
 
   const contenido = (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        overflow: "hidden",
-      }}
-    >
-      {/* ── HEADER ── */}
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: bg }}>
+
+      {/* ── LOGO ── */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: collapsed ? "center" : "space-between",
           px: collapsed ? 1 : 2,
-          py: 1.5,
-          minHeight: 56,
+          minHeight: 60,
+          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.18)} 0%, transparent 70%)`,
+          borderBottom: `1px solid ${alpha("#ffffff", 0.06)}`,
         }}
       >
         {!collapsed && (
-          <Typography
-            variant="subtitle1"
-            fontWeight={800}
-            sx={{ color: theme.palette.secondary.main, letterSpacing: 1.5, fontSize: "0.95rem" }}
-          >
-            VUC-i
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box
+              sx={{
+                width: 30,
+                height: 30,
+                borderRadius: 1.5,
+                bgcolor: theme.palette.primary.main,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                boxShadow: `0 0 12px ${alpha(theme.palette.primary.main, 0.5)}`,
+              }}
+            >
+              <BrandIcon sx={{ fontSize: "1rem", color: "#fff" }} />
+            </Box>
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: "0.8rem",
+                  fontWeight: 800,
+                  color: "#fff",
+                  lineHeight: 1.1,
+                  letterSpacing: 0.3,
+                }}
+              >
+                VentanillaÚnica
+              </Typography>
+              <Typography sx={{ fontSize: "0.6rem", color: textMuted, letterSpacing: 0.5 }}>
+                Alcaldía de Tunja
+              </Typography>
+            </Box>
+          </Box>
         )}
-        <Tooltip title={collapsed ? "Expandir" : "Contraer"} placement="right">
+
+        {collapsed && (
+          <Box
+            sx={{
+              width: 34,
+              height: 34,
+              borderRadius: 1.5,
+              bgcolor: theme.palette.primary.main,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: `0 0 10px ${alpha(theme.palette.primary.main, 0.5)}`,
+            }}
+          >
+            <BrandIcon sx={{ fontSize: "1.1rem", color: "#fff" }} />
+          </Box>
+        )}
+
+        {!collapsed && (
+          <Tooltip title="Contraer" placement="right">
+            <IconButton
+              size="small"
+              onClick={() => setCollapsed(true)}
+              sx={{ color: textMuted, "&:hover": { color: "#fff", bgcolor: hoverBg } }}
+            >
+              <ChevronLeft fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Box>
+
+      {/* Botón expandir (solo cuando está colapsado) */}
+      {collapsed && (
+        <Tooltip title="Expandir" placement="right">
           <IconButton
             size="small"
-            onClick={() => setCollapsed(!collapsed)}
-            sx={{ color: textColor, "&:hover": { backgroundColor: itemHoverBg } }}
+            onClick={() => setCollapsed(false)}
+            sx={{
+              alignSelf: "center",
+              mt: 1,
+              color: textMuted,
+              "&:hover": { color: "#fff", bgcolor: hoverBg },
+            }}
           >
-            {collapsed ? <ChevronRight fontSize="small" /> : <ChevronLeft fontSize="small" />}
+            <ChevronRight fontSize="small" />
           </IconButton>
         </Tooltip>
-      </Box>
+      )}
 
-      <Divider sx={{ borderColor: alpha("#ffffff", 0.08) }} />
-
-      {/* ── MENÚ PRINCIPAL ── */}
-      <Box sx={{ flex: 1, overflowY: "auto", overflowX: "hidden", py: 1 }}>
-        <List disablePadding>
-          {MENU.map((item) => {
-            const hasChildren = !!item.children;
-            const active = item.path ? isActive(item.path) : isParentActive(item);
-
-            return (
-              <Box key={item.label}>
-                <Tooltip
-                  title={collapsed ? item.label : ""}
-                  placement="right"
-                  arrow
-                >
-                  <ListItemButton
-                    onClick={() => {
-                      if (hasChildren) toggleSubMenu(item.label);
-                      else if (item.path) ir(item.path);
-                    }}
-                    sx={itemSx(active)}
-                  >
-                    <ListItemIcon sx={iconSx}>{item.icon}</ListItemIcon>
-                    {!collapsed && (
-                      <>
-                        <ListItemText
-                          primary={item.label}
-                          slotProps={{
-                            primary: { fontSize: "0.875rem", fontWeight: active ? 700 : 400 },
-                          }}
-                        />
-                        {hasChildren &&
-                          (openMenus[item.label] ? (
-                            <ExpandLess fontSize="small" sx={{ color: iconColor, opacity: 0.7 }} />
-                          ) : (
-                            <ExpandMore fontSize="small" sx={{ color: iconColor, opacity: 0.7 }} />
-                          ))}
-                      </>
-                    )}
-                  </ListItemButton>
-                </Tooltip>
-
-                {/* Submenú */}
-                {hasChildren && !collapsed && (
-                  <Collapse in={!!openMenus[item.label]} timeout="auto" unmountOnExit>
-                    <List disablePadding>
-                      {item.children!.map((sub) => (
-                        <ListItemButton
-                          key={sub.path}
-                          onClick={() => ir(sub.path)}
-                          sx={{
-                            ...itemSx(isActive(sub.path)),
-                            pl: 4.5,
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: 5,
-                              height: 5,
-                              borderRadius: "50%",
-                              bgcolor: isActive(sub.path)
-                                ? theme.palette.primary.light
-                                : alpha("#ffffff", 0.4),
-                              mr: 1.5,
-                              flexShrink: 0,
-                            }}
-                          />
-                          <ListItemText
-                            primary={sub.label}
-                            slotProps={{
-                              primary: { fontSize: "0.82rem", fontWeight: isActive(sub.path) ? 700 : 400 },
-                            }}
-                          />
-                        </ListItemButton>
-                      ))}
-                    </List>
-                  </Collapse>
-                )}
-              </Box>
-            );
-          })}
-        </List>
-      </Box>
-
-      {/* ── FOOTER: usuario + logout ── */}
-      <Divider sx={{ borderColor: alpha("#ffffff", 0.08) }} />
-
-      {/* Info usuario */}
-      {usuario && !collapsed && (
-        <Box sx={{ px: 2, py: 1.5 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+      {/* ── PERFIL DE USUARIO ── */}
+      {usuario && (
+        <Box
+          sx={{
+            mx: 1.5,
+            mt: 2,
+            mb: 1,
+            p: collapsed ? 0.75 : 1.5,
+            borderRadius: 2,
+            bgcolor: alpha("#ffffff", 0.04),
+            border: `1px solid ${alpha("#ffffff", 0.07)}`,
+            display: "flex",
+            alignItems: "center",
+            gap: collapsed ? 0 : 1.25,
+            justifyContent: collapsed ? "center" : "flex-start",
+          }}
+        >
+          <Tooltip title={collapsed ? `${usuario.name} — ${ROL_CONFIG[usuario.nombre_rol]?.label}` : ""} placement="right">
             <Avatar
               sx={{
-                width: 36,
-                height: 36,
-                bgcolor: theme.palette.primary.main,
-                fontSize: "0.8rem",
-                fontWeight: 700,
+                width: 34,
+                height: 34,
+                bgcolor: alpha(rolColor, 0.25),
+                color: rolColor,
+                fontSize: "0.75rem",
+                fontWeight: 800,
+                border: `2px solid ${alpha(rolColor, 0.4)}`,
                 flexShrink: 0,
               }}
             >
               {iniciales(usuario.name)}
             </Avatar>
-            <Box sx={{ overflow: "hidden" }}>
+          </Tooltip>
+
+          {!collapsed && (
+            <Box sx={{ overflow: "hidden", flex: 1 }}>
               <Typography
-                variant="body2"
-                fontWeight={700}
                 noWrap
-                sx={{ color: textColor, fontSize: "0.8rem" }}
+                sx={{ fontSize: "0.8rem", fontWeight: 700, color: textPrimary, lineHeight: 1.2 }}
               >
                 {usuario.name}
               </Typography>
-              <Chip
-                label={ETIQUETA_ROL[usuario.nombre_rol] ?? usuario.nombre_rol}
-                size="small"
+              <Box
+                component="span"
                 sx={{
-                  height: 18,
-                  fontSize: "0.68rem",
-                  fontWeight: 600,
-                  bgcolor: alpha(theme.palette.secondary.main, 0.2),
-                  color: theme.palette.secondary.light,
-                  "& .MuiChip-label": { px: 0.8 },
+                  display: "inline-block",
+                  mt: 0.4,
+                  px: 0.8,
+                  py: 0.1,
+                  borderRadius: 0.75,
+                  bgcolor: alpha(rolColor, 0.18),
+                  color: rolColor,
+                  fontSize: "0.6rem",
+                  fontWeight: 700,
+                  letterSpacing: 0.5,
+                  textTransform: "uppercase",
                 }}
-              />
+              >
+                {ROL_CONFIG[usuario.nombre_rol]?.label ?? usuario.nombre_rol}
+              </Box>
             </Box>
-          </Box>
+          )}
         </Box>
       )}
 
-      {/* Avatar solo cuando está contraído */}
-      {usuario && collapsed && (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 1.5 }}>
-          <Tooltip title={usuario.name} placement="right">
-            <Avatar
-              sx={{
-                width: 36,
-                height: 36,
-                bgcolor: theme.palette.primary.main,
-                fontSize: "0.8rem",
-                fontWeight: 700,
-              }}
-            >
-              {iniciales(usuario.name)}
-            </Avatar>
-          </Tooltip>
-        </Box>
-      )}
+      <Divider sx={{ mx: 1.5, borderColor: alpha("#ffffff", 0.06), mb: 0.5 }} />
 
-      {/* Botón logout */}
-      <Box sx={{ pb: 1 }}>
+      {/* ── NAVEGACIÓN ── */}
+      <Box sx={{ flex: 1, overflowY: "auto", overflowX: "hidden", py: 0.5 }}>
+        <List disablePadding>
+          {menu.map(renderItem)}
+        </List>
+      </Box>
+
+      {/* ── LOGOUT ── */}
+      <Box
+        sx={{
+          px: 1.5,
+          py: 1.5,
+          borderTop: `1px solid ${alpha("#ffffff", 0.06)}`,
+        }}
+      >
         <Tooltip title={collapsed ? "Cerrar sesión" : ""} placement="right" arrow>
           <ListItemButton
             onClick={cerrarSesion}
             sx={{
-              mx: 1,
               borderRadius: 2,
               px: collapsed ? 0 : 1.5,
+              minHeight: 40,
               justifyContent: collapsed ? "center" : "flex-start",
-              color: alpha("#f87171", 0.85),
-              minHeight: 44,
-              "&:hover": {
-                backgroundColor: alpha("#f87171", 0.1),
-                color: "#f87171",
-              },
-              transition: "background-color 0.2s",
+              color: alpha("#f87171", 0.75),
+              "&:hover": { bgcolor: alpha("#f87171", 0.1), color: "#f87171" },
+              transition: "background-color 0.15s, color 0.15s",
             }}
           >
             <ListItemIcon
@@ -383,14 +561,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, collapsed, setCollapse
                 mr: collapsed ? 0 : 1.5,
                 color: "inherit",
                 justifyContent: "center",
+                "& svg": { fontSize: "1.1rem" },
               }}
             >
-              <LogoutIcon fontSize="small" />
+              <LogoutIcon />
             </ListItemIcon>
             {!collapsed && (
               <ListItemText
                 primary="Cerrar sesión"
-                slotProps={{ primary: { fontSize: "0.875rem", fontWeight: 500 } }}
+                slotProps={{ primary: { fontSize: "0.85rem", fontWeight: 500 } }}
+                sx={{ my: 0 }}
               />
             )}
           </ListItemButton>
@@ -398,6 +578,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, collapsed, setCollapse
       </Box>
     </Box>
   );
+
+  // ── Drawer ─────────────────────────────────────────────────────────────────
 
   return (
     <Drawer
@@ -416,8 +598,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, collapsed, setCollapse
           }),
           overflowX: "hidden",
           border: "none",
-          backgroundColor: theme.palette.sidebar.main,
-          boxShadow: "4px 0 24px rgba(0,0,0,0.25)",
+          bgcolor: bg,
+          boxShadow: "6px 0 30px rgba(0,0,0,0.35)",
         },
       }}
     >
