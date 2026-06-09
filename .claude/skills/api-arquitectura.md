@@ -150,9 +150,18 @@ src/app/
 ├── servicios/
 │   ├── publicos/AccesoServicio.ts        ← Endpoints SIN token (auth pública)
 │   └── privados/                         ← Endpoints CON token (crear aquí)
-│       ├── TramitesServicio.ts
-│       ├── WorkflowServicio.ts
-│       └── UsuariosServicio.ts
+│       ├── WorkflowServicio.ts           ✅ EXISTE — CRUD workflows, etapas, pasos
+│       ├── TramitesServicio.ts           ✅ EXISTE — listar, detalle, iniciar, timeline
+│       ├── PasosServicio.ts              ✅ EXISTE — subsanar, reenviar, aprobar, devolver, asignar
+│       └── DocumentosServicio.ts         ✅ EXISTE — subir (FormData), listar
+├── privado/
+│   ├── TableroPrincipal.tsx              ← Dispatcher por rol (lazy DashboardCiudadano)
+│   ├── Profile.tsx                       ← Perfil genérico (admin/supervisor/funcionario)
+│   └── ciudadano/
+│       └── DashboardCiudadano.tsx        ✅ EXISTE — dashboard completo del ciudadano
+└── seguridad/
+    ├── Vigilate.tsx                      ← Guard token (todo /dashboard/*)
+    └── GuardiaRol.tsx                    ✅ EXISTE — Guard por rol (ver sección Guards)
 ```
 
 **Regla clave:** público → `AccesoServicio`, privado → un servicio en `privados/` que llama a `ApiServicio`.
@@ -343,6 +352,39 @@ export interface JwtPayload {
 ```
 
 Leer el payload: `jwtDecode<JwtPayload>(tokenHelper.get()!)`.
+
+---
+
+## Dashboard ciudadano — DashboardCiudadano.tsx
+
+Archivo: `src/app/privado/ciudadano/DashboardCiudadano.tsx`
+
+Muestra dos secciones en paralelo al cargar:
+
+| Sección | Endpoint | Descripción |
+|---|---|---|
+| Mis trámites activos | `GET /privado/tramites/todos` | Lista con estado, progreso, codigoExpediente |
+| Detalle de pasos (lazy) | `GET /privado/tramites/{id}/detalle` | Se carga al expandir el Accordion del trámite |
+| Iniciar trámite | `GET /privado/workflows?activo=true` | ⚠️ Requiere fix en backend (ver abajo) |
+
+### Acciones disponibles desde el dashboard
+
+| Estado del paso | Acción visible | Llamada |
+|---|---|---|
+| `DEVUELTO` | Botón "Subsanar" → Dialog con CampoTexto | `POST .../pasos/{id}/subsanar` |
+| `PENDIENTE` + `habilitado` + `requiereDocumentos` | Botón "Subir doc." → file picker | `POST .../pasos/{id}/documentos/subir` (FormData) |
+
+### ⚠️ GAP de backend pendiente
+
+`GET /privado/workflows` tiene `@Roles('admin', 'supervisor', 'funcionario')`. Para que el ciudadano pueda ver la sección "Iniciar trámite", agregar `'ciudadano'` al decorator en `workflows.controller.ts:37`.
+
+### Dispatcher por rol en TableroPrincipal
+
+```ts
+// TableroPrincipal.tsx — despacha por nombre_rol del JWT
+if (rol === "ciudadano") → <DashboardCiudadano />
+else                     → <ProfileSection />     // admin/supervisor/funcionario/visitante
+```
 
 ---
 
