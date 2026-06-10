@@ -28,6 +28,26 @@ export interface CrearUsuarioPayload {
   cargo: string;
 }
 
+export interface AsignarEntidadPayload {
+  codEntidad: number;
+  codDepartamento: number;
+  cargo: string;
+  codRol: 2 | 3 | 5;
+}
+
+export interface UsuarioVinculado {
+  codUsuario: number;
+  nombreUsuario: string;
+  cedula?: string;
+  rolActual: string;
+  departamento: string;
+  vinculoCreado: {
+    entidad: string;
+    cargo: string;
+    fechaAsignacion: string;
+  } | null;
+}
+
 // ── Servicio ──────────────────────────────────────────────────────────────────
 
 export const UsuariosServicio = {
@@ -42,4 +62,11 @@ export const UsuariosServicio = {
   // solo admin: DELETE /privado/usuarios/delete/:id
   eliminar: (id: number) =>
     ApiServicio.delete<{ mensaje: string }>(URLS.USUARIO_ELIMINAR(id)),
+
+  // solo admin: PUT /privado/usuarios/asignar-entidad/:id
+  asignarEntidad: (id: number, datos: AsignarEntidadPayload) =>
+    ApiServicio.put<{ mensaje: string; usuario: UsuarioVinculado }>(
+      URLS.USUARIO_ASIGNAR_ENTIDAD(id),
+      datos
+    ),
 };

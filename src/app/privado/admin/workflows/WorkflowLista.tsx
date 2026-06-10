@@ -22,6 +22,7 @@ import {
   useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
@@ -272,6 +273,15 @@ const WorkflowLista: React.FC = () => {
                     </TableCell>
 
                     <TableCell align="center">
+                      <Tooltip title="Editar etapas y pasos" arrow>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => navigate(`/dashboard/admin/workflows/${w.codWorkflow}/editar`)}
+                        >
+                          <EditOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Eliminar workflow" arrow>
                         <IconButton
                           size="small"

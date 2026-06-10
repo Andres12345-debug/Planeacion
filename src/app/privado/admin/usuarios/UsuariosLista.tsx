@@ -22,6 +22,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
 import PeopleIcon from "@mui/icons-material/People";
@@ -35,6 +36,7 @@ import { crearMensaje } from "../../../utilidades/funciones/mensaje";
 import { FormSeccion } from "../../../compartido/ui/FormSeccion";
 import { CampoTexto } from "../../../compartido/ui/CampoTexto";
 import { BotonPrincipal } from "../../../compartido/ui/BotonPrincipal";
+import AsignarEntidadDialog from "./AsignarEntidadDialog";
 
 // ── Colores por rol ───────────────────────────────────────────────────────────
 
@@ -72,6 +74,9 @@ const UsuariosLista: React.FC = () => {
   const [dialogAbierto, setDialogAbierto] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const [seleccionado, setSeleccionado] = useState<UsuarioResumen | null>(null);
+
+  // Dialog de asignar entidad
+  const [usuarioEditar, setUsuarioEditar] = useState<UsuarioResumen | null>(null);
 
   // ── Carga inicial ───────────────────────────────────────────────────────────
 
@@ -264,6 +269,17 @@ const UsuariosLista: React.FC = () => {
                       </TableCell>
 
                       <TableCell align="center">
+                        {u.nombre_rol !== "admin" && (
+                          <Tooltip title="Asignar entidad / departamento" arrow>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => setUsuarioEditar(u)}
+                            >
+                              <EditOutlinedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                         <Tooltip title="Eliminar usuario" arrow>
                           <IconButton
                             size="small"
@@ -323,6 +339,22 @@ const UsuariosLista: React.FC = () => {
           </BotonPrincipal>
         </DialogActions>
       </Dialog>
+
+      {/* Dialog de asignar entidad */}
+      <AsignarEntidadDialog
+        open={!!usuarioEditar}
+        usuario={usuarioEditar}
+        onClose={() => setUsuarioEditar(null)}
+        onAsignado={(codUsuario, datos) => {
+          setUsuarios((prev) =>
+            prev.map((u) =>
+              u.cod_usuario === codUsuario
+                ? { ...u, nombre_entidad: datos.nombre_entidad, cargo: datos.cargo, nombre_rol: datos.nombre_rol }
+                : u
+            )
+          );
+        }}
+      />
     </Box>
   );
 };

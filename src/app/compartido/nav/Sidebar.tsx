@@ -25,9 +25,7 @@ import {
   Logout as LogoutIcon,
   ChevronLeft,
   ChevronRight,
-  Assignment as AsignacionIcon,
   AccountTree as WorkflowIcon,
-  SupervisorAccount as SupervisorIcon,
   Visibility as VisitanteIcon,
   HomeWork as BrandIcon,
 } from "@mui/icons-material";
@@ -82,30 +80,17 @@ const MENU_ADMIN: MenuItem[] = [
 ];
 
 const MENU_SUPERVISOR: MenuItem[] = [
-  { label: "Inicio",      icon: <DashboardIcon />,  path: "/dashboard" },
-  { label: "Trámites",   icon: <TramitesIcon />,   path: "/dashboard/tramites", seccion: "Mi departamento" },
-  {
-    label: "Usuarios", icon: <SupervisorIcon />,
-    children: [{ label: "Agregar funcionario", path: "/dashboard/supervisor/usuarios/crear" }],
-  },
-  { label: "Asignaciones", icon: <AsignacionIcon />, path: "/dashboard/asignaciones" },
+  { label: "Inicio",    icon: <DashboardIcon />, path: "/dashboard" },
+  { label: "Trámites", icon: <TramitesIcon />,  path: "/dashboard/tramites", seccion: "Mi departamento" },
 ];
 
 const MENU_FUNCIONARIO: MenuItem[] = [
-  { label: "Inicio",       icon: <DashboardIcon />,  path: "/dashboard" },
-  { label: "Trámites",    icon: <TramitesIcon />,   path: "/dashboard/tramites",    seccion: "Trabajo" },
-  { label: "Asignaciones", icon: <AsignacionIcon />, path: "/dashboard/asignaciones" },
+  { label: "Inicio",    icon: <DashboardIcon />, path: "/dashboard" },
+  { label: "Trámites", icon: <TramitesIcon />,  path: "/dashboard/tramites", seccion: "Trabajo" },
 ];
 
 const MENU_CIUDADANO: MenuItem[] = [
   { label: "Inicio", icon: <DashboardIcon />, path: "/dashboard" },
-  {
-    label: "Trámites", icon: <TramitesIcon />, seccion: "Mis gestiones",
-    children: [
-      { label: "Mis trámites",   path: "/dashboard/tramites" },
-      { label: "Iniciar trámite", path: "/dashboard/tramites/nuevo" },
-    ],
-  },
 ];
 
 const MENU_VISITANTE: MenuItem[] = [

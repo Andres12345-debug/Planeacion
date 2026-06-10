@@ -46,6 +46,7 @@ export const URLS = {
     USUARIOS_TODOS: "/privado/usuarios/todos",
     USUARIOS_AGREGAR: "/privado/usuarios/agregar",
     USUARIO_ELIMINAR: (id: number) => `/privado/usuarios/delete/${id}`,
+    USUARIO_ASIGNAR_ENTIDAD: (id: number) => `/privado/usuarios/asignar-entidad/${id}`,
 
     // ── Departamentos ─────────────────────────────────────────────────────────
     DEPARTAMENTOS_TODOS: "/privado/departamentos",

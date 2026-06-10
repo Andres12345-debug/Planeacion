@@ -15,15 +15,8 @@ export interface EtapaResumen {
   nombre: string;
   orden: number;
   codDepartamentoResponsable: number;
-}
-
-export interface PasoResumen {
-  codPaso: number;
-  codigo: string;
-  nombre: string;
-  ordenVisual: number;
-  requiereDocumentos?: boolean;
-  visibleCiudadano?: boolean;
+  descripcion?: string;
+  pasos?: PasoCreado[];
 }
 
 export interface WorkflowCreado {
@@ -33,7 +26,7 @@ export interface WorkflowCreado {
   descripcion?: string;
   activo: boolean;
   etapas?: EtapaResumen[];
-  pasos?: PasoResumen[];
+  pasos?: PasoCreado[];
 }
 
 export interface PaginadoWorkflows {
@@ -50,6 +43,19 @@ export interface CrearEtapaDto {
   orden: number;
 }
 
+export interface EntidadResponsable {
+  codEntidad: number;
+  nombreEntidad: string;
+  tipoEntidad: string;
+}
+
+export interface FuncionarioAsignable {
+  codUsuario: number;
+  nombreUsuario: string;
+  correoUsuario: string;
+  rol: string;
+}
+
 export interface EtapaCreada {
   codEtapa: number;
   codWorkflow: number;
@@ -57,6 +63,8 @@ export interface EtapaCreada {
   codDepartamentoResponsable: number;
   descripcion?: string;
   orden: number;
+  entidadResponsable?: EntidadResponsable | null;
+  funcionariosDisponibles?: FuncionarioAsignable[];
 }
 
 export type CanalPaso = "VIRTUAL" | "PRESENCIAL" | "MIXTO";
