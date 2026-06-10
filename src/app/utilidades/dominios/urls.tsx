@@ -44,4 +44,9 @@ export const URLS = {
 
     // ── Usuarios ──────────────────────────────────────────────────────────────
     USUARIOS_TODOS: "/privado/usuarios/todos",
+    USUARIOS_AGREGAR: "/privado/usuarios/agregar",
+    USUARIO_ELIMINAR: (id: number) => `/privado/usuarios/delete/${id}`,
+
+    // ── Departamentos ─────────────────────────────────────────────────────────
+    DEPARTAMENTOS_TODOS: "/privado/departamentos",
 }

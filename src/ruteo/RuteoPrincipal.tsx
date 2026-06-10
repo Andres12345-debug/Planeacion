@@ -18,6 +18,10 @@ const Error = lazy(() => import("../app/compartido/Error"));
 const WorkflowLista = lazy(() => import("../app/privado/admin/workflows/WorkflowLista"));
 const WorkflowCrear = lazy(() => import("../app/privado/admin/workflows/WorkflowCrear"));
 
+// Admin — Usuarios
+const UsuariosLista = lazy(() => import("../app/privado/admin/usuarios/UsuariosLista"));
+const UsuariosCrear = lazy(() => import("../app/privado/admin/usuarios/UsuariosCrear"));
+
 // Gestión de trámites — admin, supervisor, funcionario, visitante
 const DashboardGestionTramites = lazy(() => import("../app/privado/funcionario/DashboardGestionTramites"));
 
@@ -55,6 +59,8 @@ export const RuteoPrincipal = () => {
           <Route element={<GuardiaRol rolesPermitidos={["admin"]} />}>
             <Route path="/dashboard/admin/workflows" element={<WorkflowLista />} />
             <Route path="/dashboard/admin/workflows/crear" element={<WorkflowCrear />} />
+            <Route path="/dashboard/admin/usuarios" element={<UsuariosLista />} />
+            <Route path="/dashboard/admin/usuarios/crear" element={<UsuariosCrear />} />
             <Route path="/dashboard/admin/tramites" element={<DashboardGestionTramites />} />
           </Route>
 
