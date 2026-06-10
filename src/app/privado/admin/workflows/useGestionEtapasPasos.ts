@@ -78,6 +78,22 @@ export function useGestionEtapasPasos(workflow: WorkflowCreado | null) {
   const setP = (id: number, parcial: Partial<FormPaso>) =>
     setFormsP((prev) => ({ ...prev, [id]: { ...(prev[id] ?? P0), ...parcial } }));
 
+  // ── Detección de formularios con datos sin guardar ────────────────────────
+  // "Continuar"/"Finalizar" no envían estos formularios al backend: solo los
+  // botones "+ Agregar Etapa"/"+ Agregar Paso" lo hacen. Si el usuario escribió
+  // algo y avanza sin presionarlos, esos datos se pierden silenciosamente.
+
+  const hayEtapaSinGuardar = () =>
+    formE.nombre.trim() !== "" ||
+    formE.codDepartamentoResponsable !== "" ||
+    formE.descripcion.trim() !== "";
+
+  const hayPasoSinGuardar = () =>
+    etapas.some((et) => {
+      const f = formsP[et.codEtapa];
+      return !!f && (f.codigo.trim() !== "" || f.nombre.trim() !== "" || f.descripcion.trim() !== "");
+    });
+
   const handleAgregarPaso = async (etapa: EtapaCreada) => {
     if (!workflow) return;
     const form = getP(etapa.codEtapa);
@@ -123,5 +139,7 @@ export function useGestionEtapasPasos(workflow: WorkflowCreado | null) {
     handleAgregarEtapa,
     getP, setP,
     handleAgregarPaso,
+    hayEtapaSinGuardar,
+    hayPasoSinGuardar,
   };
 }

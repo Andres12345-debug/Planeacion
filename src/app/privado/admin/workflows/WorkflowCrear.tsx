@@ -43,6 +43,7 @@ const WorkflowCrear: React.FC = () => {
   const {
     cargando, formE, setFormE, etapas, pasosPorEtapa, departamentos,
     nombreDepartamento, handleAgregarEtapa, getP, setP, handleAgregarPaso,
+    hayEtapaSinGuardar, hayPasoSinGuardar,
   } = useGestionEtapasPasos(workflow);
 
   // ── Handlers Step 1 ──────────────────────────────────────────────────────────
@@ -68,6 +69,31 @@ const WorkflowCrear: React.FC = () => {
     } finally {
       setCargandoWF(false);
     }
+  };
+
+  // ── Handlers Step 1 → 2 / Step 2 final ──────────────────────────────────────
+
+  const handleContinuarPasos = () => {
+    if (hayEtapaSinGuardar()) {
+      crearMensaje(
+        "warning",
+        "Tienes datos de una etapa sin guardar. Presiona \"+ Agregar Etapa\" para guardarla, o borra el formulario antes de continuar."
+      );
+      return;
+    }
+    setPasoActivo(2);
+  };
+
+  const handleFinalizar = () => {
+    if (hayPasoSinGuardar()) {
+      crearMensaje(
+        "warning",
+        "Tienes datos de un paso sin guardar. Presiona \"+ Agregar Paso a esta Etapa\" para guardarlo, o borra el formulario antes de finalizar."
+      );
+      return;
+    }
+    crearMensaje("success", "Workflow configurado exitosamente");
+    navigate("/dashboard/admin/workflows");
   };
 
   // ── Render ────────────────────────────────────────────────────────────────────
@@ -163,7 +189,7 @@ const WorkflowCrear: React.FC = () => {
               type="button"
               fullWidth={false}
               disabled={etapas.length === 0 || cargando}
-              onClick={() => setPasoActivo(2)}
+              onClick={handleContinuarPasos}
               sx={{ px: 4 }}
             >
               Continuar — Agregar Pasos
@@ -196,10 +222,7 @@ const WorkflowCrear: React.FC = () => {
               fullWidth={false}
               color="success"
               cargando={cargando}
-              onClick={() => {
-                crearMensaje("success", "Workflow configurado exitosamente");
-                navigate("/dashboard/admin/workflows");
-              }}
+              onClick={handleFinalizar}
               sx={{ px: 4 }}
             >
               Finalizar

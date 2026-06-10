@@ -24,7 +24,26 @@ const WorkflowEditar: React.FC = () => {
   const {
     cargando, formE, setFormE, etapas, setEtapas, pasosPorEtapa, setPasosPorEtapa,
     departamentos, nombreDepartamento, handleAgregarEtapa, getP, setP, handleAgregarPaso,
+    hayEtapaSinGuardar, hayPasoSinGuardar,
   } = useGestionEtapasPasos(workflow);
+
+  const handleVolver = () => {
+    if (hayEtapaSinGuardar()) {
+      crearMensaje(
+        "warning",
+        "Tienes datos de una etapa sin guardar. Presiona \"+ Agregar Etapa\" para guardarla, o borra el formulario antes de salir."
+      );
+      return;
+    }
+    if (hayPasoSinGuardar()) {
+      crearMensaje(
+        "warning",
+        "Tienes datos de un paso sin guardar. Presiona \"+ Agregar Paso a esta Etapa\" para guardarlo, o borra el formulario antes de salir."
+      );
+      return;
+    }
+    navigate("/dashboard/admin/workflows");
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -125,7 +144,7 @@ const WorkflowEditar: React.FC = () => {
         </FormSeccion>
 
         <Box>
-          <Button onClick={() => navigate("/dashboard/admin/workflows")}>
+          <Button onClick={handleVolver}>
             Volver a la lista
           </Button>
         </Box>
