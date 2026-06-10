@@ -10,12 +10,30 @@ export interface CrearWorkflowDto {
   activo?: boolean;
 }
 
+export interface EtapaResumen {
+  codEtapa: number;
+  nombre: string;
+  orden: number;
+  codDepartamentoResponsable: number;
+}
+
+export interface PasoResumen {
+  codPaso: number;
+  codigo: string;
+  nombre: string;
+  ordenVisual: number;
+  requiereDocumentos?: boolean;
+  visibleCiudadano?: boolean;
+}
+
 export interface WorkflowCreado {
   codWorkflow: number;
   codigo: string;
   nombre: string;
   descripcion?: string;
   activo: boolean;
+  etapas?: EtapaResumen[];
+  pasos?: PasoResumen[];
 }
 
 export interface PaginadoWorkflows {

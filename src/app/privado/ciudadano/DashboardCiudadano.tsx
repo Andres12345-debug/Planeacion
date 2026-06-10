@@ -17,19 +17,27 @@ import {
   alpha,
   useTheme,
   Stack,
+  MenuItem,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import BuildIcon from "@mui/icons-material/Build";
+import SendIcon from "@mui/icons-material/Send";
 import InboxIcon from "@mui/icons-material/Inbox";
+import DescriptionIcon from "@mui/icons-material/Description";
 import { jwtDecode } from "jwt-decode";
 
 import { TramitesServicio, TramiteResumen, TramiteDetalle, EstadoTramite, EstadoPaso } from "../../servicios/privados/TramitesServicio";
 import { WorkflowServicio, WorkflowCreado } from "../../servicios/privados/WorkflowServicio";
 import { PasosServicio } from "../../servicios/privados/PasosServicio";
 import { DocumentosServicio } from "../../servicios/privados/DocumentosServicio";
+import { EntidadesServicio, Entidad } from "../../servicios/privados/EntidadesServicio";
 import { tokenHelper } from "../../utilidades/auth/tokenHelper";
 import { crearMensaje } from "../../utilidades/funciones/mensaje";
 import { FormSeccion } from "../../compartido/ui/FormSeccion";
@@ -80,8 +88,13 @@ const DashboardCiudadano: React.FC = () => {
   const [workflows, setWorkflows]         = useState<WorkflowCreado[]>([]);
   const [cargandoW, setCargandoW]         = useState(true);
 
+  // Entidades
+  const [entidades, setEntidades]         = useState<Entidad[]>([]);
+  const [cargandoE, setCargandoE]         = useState(true);
+
   // Dialog: iniciar trámite
-  const [wfSeleccionado, setWfSeleccionado] = useState<WorkflowCreado | null>(null);
+  const [wfSeleccionado, setWfSeleccionado]         = useState<WorkflowCreado | null>(null);
+  const [entidadSeleccionada, setEntidadSeleccionada] = useState<number | "">("");
   const [obsIniciar, setObsIniciar]         = useState("");
   const [iniciando, setIniciando]           = useState(false);
 
@@ -89,6 +102,11 @@ const DashboardCiudadano: React.FC = () => {
   const [pasoSubsanar, setPasoSubsanar] = useState<{ tramiteId: number; pasoId: number; nombre: string } | null>(null);
   const [obsSubsanar, setObsSubsanar]   = useState("");
   const [subsanando, setSubsanando]     = useState(false);
+
+  // Dialog: reenviar paso (subsanación completada)
+  const [pasoReenviar, setPasoReenviar] = useState<{ tramiteId: number; pasoId: number; nombre: string } | null>(null);
+  const [obsReenviar, setObsReenviar]   = useState("");
+  const [reenviando, setReenviando]     = useState(false);
 
   // Upload de documento
   const fileInputRef                          = useRef<HTMLInputElement>(null);
@@ -112,21 +130,34 @@ const DashboardCiudadano: React.FC = () => {
   const cargarWorkflows = useCallback(async () => {
     setCargandoW(true);
     try {
-      // ⚠️ BACKEND GAP: agregar 'ciudadano' a @Roles en workflows.controller.ts:37
-      // Hasta que se corrija, el 403 se maneja silenciosamente (sección queda vacía)
       const res = await WorkflowServicio.listar({ activo: true });
       setWorkflows(res.data);
-    } catch {
+    } catch (e) {
+      crearMensaje("error", (e as Error).message);
       setWorkflows([]);
     } finally {
       setCargandoW(false);
     }
   }, []);
 
+  const cargarEntidades = useCallback(async () => {
+    setCargandoE(true);
+    try {
+      const res = await EntidadesServicio.listar();
+      setEntidades(res);
+    } catch (e) {
+      crearMensaje("error", (e as Error).message);
+      setEntidades([]);
+    } finally {
+      setCargandoE(false);
+    }
+  }, []);
+
   useEffect(() => {
     cargarTramites();
     cargarWorkflows();
-  }, [cargarTramites, cargarWorkflows]);
+    cargarEntidades();
+  }, [cargarTramites, cargarWorkflows, cargarEntidades]);
 
   // ── Detalle lazy ─────────────────────────────────────────────────────────────
 
@@ -145,16 +176,23 @@ const DashboardCiudadano: React.FC = () => {
 
   // ── Iniciar trámite ──────────────────────────────────────────────────────────
 
+  const abrirIniciar = (wf: WorkflowCreado) => {
+    setWfSeleccionado(wf);
+    setEntidadSeleccionada(usuario?.cod_entidad ?? entidades[0]?.codEntidad ?? "");
+    setObsIniciar("");
+  };
+
   const confirmarIniciar = async () => {
-    if (!wfSeleccionado) return;
+    if (!wfSeleccionado || !entidadSeleccionada) return;
     setIniciando(true);
     try {
       const res = await TramitesServicio.iniciar(wfSeleccionado.codWorkflow, {
-        codEntidadAsignada: usuario?.cod_entidad ?? 1,
+        codEntidadAsignada: Number(entidadSeleccionada),
         observacionInicial: obsIniciar || undefined,
       });
       crearMensaje("success", `Trámite ${res.codigoExpediente} iniciado`);
       setWfSeleccionado(null);
+      setEntidadSeleccionada("");
       setObsIniciar("");
       cargarTramites();
     } catch (e) {
@@ -184,6 +222,26 @@ const DashboardCiudadano: React.FC = () => {
     }
   };
 
+  // ── Reenviar paso ────────────────────────────────────────────────────────────
+
+  const confirmarReenviar = async () => {
+    if (!pasoReenviar || !obsReenviar.trim()) return;
+    setReenviando(true);
+    try {
+      await PasosServicio.reenviar(pasoReenviar.tramiteId, pasoReenviar.pasoId, obsReenviar);
+      crearMensaje("success", "Trámite reenviado para revisión");
+      // Recarga el detalle del trámite afectado
+      const res = await TramitesServicio.detalle(pasoReenviar.tramiteId);
+      setDetalles((prev) => ({ ...prev, [pasoReenviar.tramiteId]: res }));
+      setPasoReenviar(null);
+      setObsReenviar("");
+    } catch (e) {
+      crearMensaje("error", (e as Error).message);
+    } finally {
+      setReenviando(false);
+    }
+  };
+
   // ── Subir documento ──────────────────────────────────────────────────────────
 
   const abrirSelectorArchivo = (tramiteId: number, pasoId: number) => {
@@ -198,6 +256,9 @@ const DashboardCiudadano: React.FC = () => {
     try {
       await DocumentosServicio.subir(uploadTarget.tramiteId, uploadTarget.pasoId, archivo);
       crearMensaje("success", `"${archivo.name}" subido correctamente`);
+      // Recarga el detalle para reflejar el nuevo documento
+      const res = await TramitesServicio.detalle(uploadTarget.tramiteId);
+      setDetalles((prev) => ({ ...prev, [uploadTarget.tramiteId]: res }));
     } catch (ex) {
       crearMensaje("error", (ex as Error).message);
     } finally {
@@ -227,6 +288,7 @@ const DashboardCiudadano: React.FC = () => {
           const cfg = ESTADO_PASO[paso.estado] ?? { label: paso.estado, color: "default" as const };
 
           const esDevuelto = paso.estado === "DEVUELTO";
+          const esEnSubsanacion = paso.estado === "EN_SUBSANACION";
 
           // Ciudadano puede subir doc cuando el paso lo requiere y está activo
           const necesitaDocumento =
@@ -239,8 +301,8 @@ const DashboardCiudadano: React.FC = () => {
               key={paso.codTramitePaso}
               sx={{
                 display: "flex",
-                alignItems: "center",
-                gap: 1.5,
+                flexDirection: "column",
+                gap: 1,
                 p: 1.25,
                 borderRadius: 2,
                 bgcolor: (t) => t.palette.mode === "dark"
@@ -253,6 +315,7 @@ const DashboardCiudadano: React.FC = () => {
                 opacity: paso.habilitado ? 1 : 0.55,
               }}
             >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               {/* Orden */}
               <Typography
                 variant="caption"
@@ -317,6 +380,42 @@ const DashboardCiudadano: React.FC = () => {
                   <UploadFileIcon sx={{ fontSize: "0.9rem", mr: 0.5 }} />
                   Subir doc.
                 </Button>
+              )}
+
+              {/* Acción: reenviar (luego de subsanar y adjuntar correcciones) */}
+              {esEnSubsanacion && (
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="secondary"
+                  onClick={() => setPasoReenviar({
+                    tramiteId: codTramite,
+                    pasoId: paso.codTramitePaso,
+                    nombre: paso.paso.nombre,
+                  })}
+                  sx={{ textTransform: "none", fontSize: "0.75rem", py: 0.25, flexShrink: 0 }}
+                >
+                  <SendIcon sx={{ fontSize: "0.9rem", mr: 0.5 }} />
+                  Reenviar
+                </Button>
+              )}
+            </Box>
+
+              {/* Documentos cargados en el paso */}
+              {!!paso.documentos?.length && (
+                <List dense disablePadding sx={{ pl: 4 }}>
+                  {paso.documentos.map((doc) => (
+                    <ListItem key={doc.codDocumentoPaso} disableGutters disablePadding sx={{ py: 0 }}>
+                      <ListItemIcon sx={{ minWidth: 28 }}>
+                        <DescriptionIcon sx={{ fontSize: "1rem" }} color="action" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primaryTypographyProps={{ variant: "caption" }}
+                        primary={doc.nombreDocumento}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
               )}
             </Box>
           );
@@ -509,7 +608,7 @@ const DashboardCiudadano: React.FC = () => {
                 <BotonPrincipal
                   type="button"
                   fullWidth={false}
-                  onClick={() => setWfSeleccionado(wf)}
+                  onClick={() => abrirIniciar(wf)}
                   sx={{ fontSize: "0.8rem", py: 0.6, px: 2.5 }}
                 >
                   <AddCircleOutlineIcon sx={{ fontSize: "0.95rem", mr: 0.5 }} />
@@ -544,13 +643,53 @@ const DashboardCiudadano: React.FC = () => {
           </Typography>
         </DialogTitle>
         <DialogContent>
+          {/* Pasos del workflow visibles para el ciudadano */}
+          {!!wfSeleccionado?.pasos?.length && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                PASOS DE ESTE TRÁMITE
+              </Typography>
+              <List dense disablePadding sx={{ mt: 0.5 }}>
+                {wfSeleccionado.pasos
+                  .filter((p) => p.visibleCiudadano !== false)
+                  .sort((a, b) => a.ordenVisual - b.ordenVisual)
+                  .map((p) => (
+                    <ListItem key={p.codPaso} disableGutters disablePadding sx={{ py: 0.25 }}>
+                      <ListItemText
+                        primaryTypographyProps={{ variant: "body2" }}
+                        primary={`${p.ordenVisual}. ${p.nombre}`}
+                        secondaryTypographyProps={{ variant: "caption" }}
+                        secondary={p.requiereDocumentos ? "Requiere documento" : undefined}
+                      />
+                    </ListItem>
+                  ))}
+              </List>
+            </Box>
+          )}
+
+          {/* Entidad ante la cual se radica el trámite */}
+          <CampoTexto
+            select
+            label="Entidad"
+            value={entidadSeleccionada}
+            onChange={(e) => setEntidadSeleccionada(Number(e.target.value))}
+            disabled={cargandoE || entidades.length === 0}
+            helperText={!cargandoE && entidades.length === 0 ? "No hay entidades disponibles" : undefined}
+          >
+            {entidades.map((ent) => (
+              <MenuItem key={ent.codEntidad} value={ent.codEntidad}>
+                {ent.nombreEntidad}
+              </MenuItem>
+            ))}
+          </CampoTexto>
+
           <CampoTexto
             label="Observación inicial (opcional)"
             multiline
             rows={3}
             value={obsIniciar}
             onChange={(e) => setObsIniciar(e.target.value)}
-            sx={{ mt: 1 }}
+            sx={{ mt: 2 }}
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
@@ -562,6 +701,7 @@ const DashboardCiudadano: React.FC = () => {
             fullWidth={false}
             cargando={iniciando}
             onClick={confirmarIniciar}
+            disabled={!entidadSeleccionada}
             sx={{ px: 3 }}
           >
             Confirmar
@@ -606,6 +746,47 @@ const DashboardCiudadano: React.FC = () => {
             sx={{ px: 3 }}
           >
             Enviar subsanación
+          </BotonPrincipal>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Dialog: Reenviar paso ── */}
+      <Dialog
+        open={!!pasoReenviar}
+        onClose={() => !reenviando && setPasoReenviar(null)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography fontWeight={800}>Reenviar para revisión</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {pasoReenviar?.nombre}
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <CampoTexto
+            label="Comentario para el funcionario *"
+            multiline
+            rows={4}
+            value={obsReenviar}
+            onChange={(e) => setObsReenviar(e.target.value)}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" onClick={() => setPasoReenviar(null)} disabled={reenviando}>
+            Cancelar
+          </Button>
+          <BotonPrincipal
+            type="button"
+            fullWidth={false}
+            cargando={reenviando}
+            onClick={confirmarReenviar}
+            disabled={!obsReenviar.trim()}
+            sx={{ px: 3 }}
+          >
+            Reenviar
           </BotonPrincipal>
         </DialogActions>
       </Dialog>

@@ -2,7 +2,24 @@
 ## Ruta de Construcción: ejemplos completos de uso
 
 **Base URL:** `http://localhost:{PUERTO_SERVIDOR}`  
-**Actualizado:** 2026-06-04
+**Actualizado:** 2026-06-10
+
+---
+
+> ## 🆕 Novedades de esta actualización (2026-06-10)
+>
+> Se habilitó la **conexión Workflow ↔ Trámites para el rol `ciudadano`** (y `visitante`), que antes no existía:
+>
+> | Endpoint | Antes | Ahora |
+> |----------|-------|-------|
+> | `GET /privado/workflows` | Solo `admin`, `supervisor`, `funcionario` | + `ciudadano`, `visitante` |
+> | `GET /privado/workflows/:id` | Solo `admin`, `supervisor`, `funcionario` | + `ciudadano`, `visitante` |
+> | `GET /privado/entidades/todos` | Solo `admin`, `supervisor`, `funcionario` | + `ciudadano`, `visitante` (ven entidades **activas**) |
+> | `GET /privado/entidades/:id` | Solo `admin`, `supervisor`, `funcionario` | + `ciudadano`, `visitante` (si la entidad está activa) |
+>
+> Esto era un bloqueo real: sin estos dos catálogos, el ciudadano no tenía forma de saber **qué tipos de trámite existen** (`WORKFLOW_ID`) ni **ante qué entidad radicarlos** (`codEntidadAsignada`) para llamar a `POST /privado/tramites/iniciar/:workflowId`.
+>
+> Ver la nueva sección **["Flujo de integración Frontend — Ciudadano"](#flujo-de-integración-frontend--ciudadano)** para el recorrido completo de pantallas/endpoints.
 
 ---
 
@@ -53,17 +70,85 @@ En tu collection de Postman, configura estas variables:
 
 ## Índice
 
-1. [Fase 0 — Logins](#fase-0--logins)
-2. [Fase 1 — Admin crea el workflow](#fase-1--admin-crea-el-workflow)
-3. [Fase 2 — Admin asigna funcionarios a entidad y departamento](#fase-2--admin-asigna-funcionarios-a-entidad-y-departamento)
-4. [Fase 3 — Ciudadano inicia el trámite](#fase-3--ciudadano-inicia-el-trámite)
-5. [Fase 4 — Ciudadano sube el documento PDT-PDFT-002](#fase-4--ciudadano-sube-el-documento-pdt-pdft-002)
-6. [Fase 5 — Funcionario revisa, aprueba o devuelve](#fase-5--funcionario-revisa-aprueba-o-devuelve)
-7. [Fase 6 — Ciudadano subsana y reenvía](#fase-6--ciudadano-subsana-y-reenvía)
-8. [Fase 7 — Supervisor asigna funcionario a un paso](#fase-7--supervisor-asigna-funcionario-a-un-paso)
-9. [Fase 8 — Consultas y seguimiento](#fase-8--consultas-y-seguimiento)
-10. [Máquina de estados](#máquina-de-estados)
-11. [Errores comunes](#errores-comunes)
+1. [Flujo de integración Frontend — Ciudadano](#flujo-de-integración-frontend--ciudadano)
+2. [Fase 0 — Logins](#fase-0--logins)
+3. [Fase 1 — Admin crea el workflow](#fase-1--admin-crea-el-workflow)
+4. [Fase 2 — Admin asigna funcionarios a entidad y departamento](#fase-2--admin-asigna-funcionarios-a-entidad-y-departamento)
+5. [Fase 3 — Ciudadano explora e inicia el trámite](#fase-3--ciudadano-explora-e-inicia-el-trámite)
+6. [Fase 4 — Ciudadano sube el documento PDT-PDFT-002](#fase-4--ciudadano-sube-el-documento-pdt-pdft-002)
+7. [Fase 5 — Funcionario revisa, aprueba o devuelve](#fase-5--funcionario-revisa-aprueba-o-devuelve)
+8. [Fase 6 — Ciudadano subsana y reenvía](#fase-6--ciudadano-subsana-y-reenvía)
+9. [Fase 7 — Supervisor asigna funcionario a un paso](#fase-7--supervisor-asigna-funcionario-a-un-paso)
+10. [Fase 8 — Consultas y seguimiento](#fase-8--consultas-y-seguimiento)
+11. [Máquina de estados](#máquina-de-estados)
+12. [Errores comunes](#errores-comunes)
+
+---
+
+## Flujo de integración Frontend — Ciudadano
+
+Este es el recorrido **end-to-end** que el frontend debe implementar para que un ciudadano use la Ventanilla Única, de principio a fin. Cada paso indica la pantalla típica, el endpoint a llamar y qué hacer con la respuesta.
+
+```
+┌─────────────────────┐  ┌──────────────────────────┐  ┌───────────────────────────┐
+│ 1. Login / Registro  │→ │ 2. Pantalla "Nuevo trámite"│→ │ 3. Confirmación de inicio │
+│ POST /publico/auth/  │  │ - GET /privado/entidades/  │  │ POST /privado/tramites/   │
+│   login | registro   │  │     todos                  │  │   iniciar/{WORKFLOW_ID}   │
+│                       │  │ - GET /privado/workflows   │  │ → guarda codTramite       │
+│                       │  │     ?activo=true           │  │                           │
+│                       │  │ - GET /privado/workflows/  │  │                           │
+│                       │  │     {id} (etapas y pasos)  │  │                           │
+└─────────────────────┘  └──────────────────────────┘  └───────────────────────────┘
+            │                                                          │
+            ▼                                                          ▼
+┌─────────────────────────────┐                     ┌───────────────────────────────────┐
+│ 4. "Mis trámites" (lista)    │ ◄────────────────── │ 5. Detalle del trámite             │
+│ GET /privado/tramites/       │                     │ GET /privado/tramites/{id}/detalle │
+│     mis-tramites             │                     │ GET /privado/tramites/{id}/timeline│
+└─────────────────────────────┘                     └───────────────────────────────────┘
+                                                                       │
+                          ┌────────────────────────────────────────────┴───────────────────────┐
+                          ▼                                                                      ▼
+        ┌───────────────────────────────────┐                          ┌─────────────────────────────────────┐
+        │ 6a. Subir documento de un paso     │                          │ 6b. Si el paso fue DEVUELTO          │
+        │ POST .../pasos/{pasoId}/documentos/│                          │ POST .../pasos/{pasoId}/subsanar     │
+        │   subir (multipart/form-data)      │                          │ POST .../pasos/{pasoId}/documentos/  │
+        │ GET  .../pasos/{pasoId}/documentos │                          │   subir (documento corregido)        │
+        └───────────────────────────────────┘                          │ POST .../pasos/{pasoId}/reenviar     │
+                                                                         └─────────────────────────────────────┘
+```
+
+### Paso a paso con endpoints exactos
+
+1. **Autenticación.** `POST /publico/auth/login` (o `/publico/registros` si es un usuario nuevo). Guardar el `token` y decodificar el JWT para conocer `sub` (id del usuario) y `nombre_rol` (`ciudadano`).
+
+2. **Pantalla "Nuevo trámite" — catálogos.**
+   - `GET /privado/entidades/todos` → lista de entidades activas. El ciudadano elige una → `codEntidadAsignada`.
+   - `GET /privado/workflows?activo=true` → lista de tipos de trámite disponibles (cada uno con `codigo`, `nombre`, `descripcion`, `etapas`, `pasos`).
+   - Opcional: `GET /privado/workflows/{codWorkflow}` para mostrar al ciudadano el detalle de etapas y pasos antes de iniciar (por ejemplo, para mostrar "este trámite tiene 3 pasos, debes adjuntar el formato PDT-PDFT-002").
+   - **Tip de UI:** al renderizar los pasos de un workflow, filtra por `paso.visibleCiudadano === true` — los pasos con `visibleCiudadano: false` son de uso interno (funcionarios) y no deben mostrarse en el seguimiento del ciudadano.
+
+3. **Iniciar el trámite.** `POST /privado/tramites/iniciar/{WORKFLOW_ID}` con `{ codEntidadAsignada, observacionInicial? }`. La respuesta trae el trámite creado con `codTramite`, `codigoExpediente` y el arreglo `pasos` (todos los de la primera etapa quedan `habilitado: true`). Guardar `codTramite` y navegar a la pantalla de detalle.
+
+4. **"Mis trámites" (lista / dashboard).** `GET /privado/tramites/mis-tramites` (o `GET /privado/tramites/todos`, devuelve lo mismo para `ciudadano`: solo sus propios trámites, paginado). Útil para el listado inicial al volver a entrar a la app.
+
+5. **Detalle y seguimiento de un trámite.**
+   - `GET /privado/tramites/{id}/detalle` → trámite completo con `workflow`, `pasos` (cada uno con su `paso` definicional, `estado`, `habilitado`, `documentos`).
+   - `GET /privado/tramites/{id}/timeline` → histórico de eventos para una vista tipo "línea de tiempo".
+   - El frontend debe resaltar el/los pasos con `habilitado: true` como "acción requerida" o "en curso", y los `estado: PENDIENTE` como bloqueados (etapa anterior sin completar).
+
+6. **Acciones del ciudadano sobre un paso:**
+   - **Subir documento:** `POST /privado/tramites/{id}/pasos/{pasoId}/documentos/subir` (multipart, campo `file` + `descripcion`). Solo permitido si el paso está `habilitado` o en `EN_SUBSANACION`.
+   - **Listar / descargar documentos del paso:** `GET .../documentos` y `GET .../documentos/{documentoId}/descargar`.
+   - **Si el funcionario devolvió el paso (`estado: DEVUELTO`):**
+     1. `POST .../pasos/{pasoId}/subsanar` → pasa a `EN_SUBSANACION`.
+     2. Subir el/los documentos corregidos.
+     3. `POST .../pasos/{pasoId}/reenviar` → pasa a `REENVIADO` y vuelve a quedar habilitado para revisión del funcionario.
+
+> **Notas para el frontend:**
+> - Todos los endpoints anteriores requieren `Authorization: Bearer {{TOKEN_CIUDADANO}}` y van bajo el prefijo `{{BASE_URL}}/privado/...`.
+> - El ciudadano **nunca** puede `iniciar`, `aprobar`, `devolver` o `asignar` pasos — esas acciones son de `funcionario`/`supervisor`/`admin` (ver [Tabla de acciones](#tabla-de-acciones)).
+> - El progreso global del trámite (`tramite.progreso`, 0–100) se recalcula automáticamente cada vez que un funcionario aprueba un paso; cuando llega a 100 el `estado` del trámite pasa a `COMPLETADO` sin acción adicional del frontend.
 
 ---
 
@@ -476,7 +561,83 @@ Con `cod_departamento: 3` == `codDepartamentoResponsable: 3` del paso → Laura 
 
 ---
 
-## Fase 3 — Ciudadano inicia el trámite
+## Fase 3 — Ciudadano explora e inicia el trámite
+
+### 3.0 Carlos Soto explora los catálogos disponibles
+
+> Antes de iniciar un trámite, el frontend necesita saber **ante qué entidad** y **con qué tipo de trámite (workflow)** trabajar. Estos dos endpoints ahora están disponibles para `ciudadano`.
+
+#### 3.0.1 Listar entidades disponibles
+
+```http
+GET {{BASE_URL}}/privado/entidades/todos
+Authorization: Bearer {{TOKEN_CIUDADANO}}
+```
+
+**Respuesta:**
+```json
+[
+  {
+    "codEntidad": 1,
+    "nombreEntidad": "Alcaldía Mayor de Tunja",
+    "tipoEntidad": "Municipio",
+    "nit": "891800498-1",
+    "estado": true,
+    "codCiudad": 1
+  }
+]
+```
+> Solo se devuelven entidades con `estado: true`. El ciudadano elige una → `codEntidadAsignada = 1`.
+
+#### 3.0.2 Listar workflows (tipos de trámite) activos
+
+```http
+GET {{BASE_URL}}/privado/workflows?activo=true
+Authorization: Bearer {{TOKEN_CIUDADANO}}
+```
+
+**Respuesta:**
+```json
+{
+  "data": [
+    {
+      "codWorkflow": 1,
+      "codigo": "RUTA-CONST-001",
+      "nombre": "Ruta de Construcción",
+      "descripcion": "Proceso de verificación de licencias de construcción en el municipio",
+      "activo": true,
+      "etapas": [
+        {
+          "codEtapa": 1,
+          "nombre": "Concepto de verificación de licencias de construcción",
+          "orden": 1,
+          "codDepartamentoResponsable": 3
+        }
+      ],
+      "pasos": [
+        { "codPaso": 1, "codigo": "PDT-PDFT-002", "nombre": "Diligenciamiento del formato PDT-PDFT-002", "ordenVisual": 1, "requiereDocumentos": true, "visibleCiudadano": true },
+        { "codPaso": 2, "codigo": "VERIF-PLANOS-001", "nombre": "Verificación técnica de planos", "ordenVisual": 2, "visibleCiudadano": true },
+        { "codPaso": 3, "codigo": "NORMA-URB-001", "nombre": "Concepto de norma urbanística", "ordenVisual": 3, "visibleCiudadano": true }
+      ]
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 25
+}
+```
+> El ciudadano elige el workflow "Ruta de Construcción" → `WORKFLOW_ID = 1`. El frontend puede usar `etapas` y `pasos` para mostrarle de antemano qué pasos tendrá que cumplir (filtrando por `visibleCiudadano: true`).
+
+#### 3.0.3 (Opcional) Detalle de un workflow específico
+
+```http
+GET {{BASE_URL}}/privado/workflows/{{WORKFLOW_ID}}
+Authorization: Bearer {{TOKEN_CIUDADANO}}
+```
+
+> Misma respuesta que `3.1.6` en la Fase 1 (workflow con `etapas` y `pasos` completos). Útil para una pantalla de "detalle del trámite antes de iniciar".
+
+---
 
 ### 3.1 Carlos Soto inicia el trámite de licencia de construcción
 
@@ -818,6 +979,8 @@ GET {{BASE_URL}}/privado/tramites/todos?estado=EN_PROCESO
 GET {{BASE_URL}}/privado/tramites/todos?codEntidadAsignada=1
 ```
 
+> **Atajo para el ciudadano:** `GET {{BASE_URL}}/privado/tramites/mis-tramites` (rol `ciudadano` exclusivamente) devuelve exactamente lo mismo que `/tramites/todos` para ese rol — solo sus propios trámites, sin necesidad de filtros. Útil como endpoint único para el dashboard "Mis trámites" del frontend.
+
 **Respuesta:**
 ```json
 {
@@ -1047,7 +1210,10 @@ El sistema aplica **dos niveles de validación** encadenados:
 
 | Acción | Endpoint | `admin` | `supervisor` | `funcionario` | `ciudadano` | `visitante` |
 |--------|----------|---------|--------------|---------------|-------------|-------------|
-| Ver lista | `GET /tramites/todos` | ✅ Todo | ✅ Entidad+Dpto | ✅ Entidad+Dpto | ✅ Propios | ✅ Entidad |
+| Ver entidades disponibles | `GET /entidades/todos` | ✅ Todo | ✅ Propia | ✅ Propia | ✅ Activas | ✅ Activas |
+| Ver workflows disponibles | `GET /workflows`, `GET /workflows/:id` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Iniciar trámite | `POST /tramites/iniciar/:workflowId` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Ver lista | `GET /tramites/todos`, `GET /tramites/mis-tramites` | ✅ Todo | ✅ Entidad+Dpto | ✅ Entidad+Dpto | ✅ Propios | ✅ Entidad |
 | Ver detalle / timeline | `GET /tramites/:id/detalle` | ✅ | ✅ Entidad+Dpto | ✅ Entidad+Dpto | ✅ Propio | ✅ Entidad |
 | Ver/descargar documentos | `GET /pasos/:id/documentos` | ✅ | ✅ | ✅ | ✅ Propios | ✅ Entidad |
 | Iniciar revisión | `POST /pasos/:id/iniciar` | ✅ | ✅ Mismo dpto. | ✅ Mismo dpto. | ❌ | ❌ |
@@ -1061,6 +1227,7 @@ El sistema aplica **dos niveles de validación** encadenados:
 | Crear workflow/etapa/paso | `POST /workflows/...` | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 > **"Mismo dpto."** = `cod_departamento` del JWT del usuario coincide con `codDepartamentoResponsable` del paso (campo copiado de la etapa al iniciar el trámite).
+> **"Activas"** = solo entidades con `estado: true` (las inactivas no se devuelven a `ciudadano`/`visitante`).
 
 ---
 
@@ -1112,28 +1279,30 @@ El sistema aplica **dos niveles de validación** encadenados:
 ## Resumen del flujo completo
 
 ```
-[ADMIN]                [CIUDADANO]          [FUNCIONARIO]         [VISITANTE]
-   │                       │                    │                     │
-   │ 1. Crear workflow      │                    │                     │
-   │ 2. Crear etapa         │                    │                     │
-   │ 3. Crear 3 pasos       │                    │                     │
-   │ 4. Asignar usuarios    │                    │                     │
-   │    codRol: 2/3/5       │                    │                     │
-   │                       │                    │                     │
-   │                       │ 5. Login           │                     │
-   │                       │ 6. Iniciar tramite │                     │
-   │                       │ 7. Subir doc       │                     │
-   │                       │                    │                     │
-   │                       │               8. Ver docs            9. Ver tramites
-   │                       │               10. Iniciar revisión   10. Ver detalle
-   │                       │               11. Aprobar/Devolver        │
-   │                       │                    │                     │
-   │         (si devuelto) │ 12. Subsanar       │                     │
-   │                       │ 13. Reenviar       │                     │
-   │                       │               14. Re-revisar             │
-   │                       │               15. Aprobar                │
-   │                       │                    │                     │
-   │                       │ ← Sistema completa trámite               │
+[ADMIN]                [CIUDADANO]                  [FUNCIONARIO]         [VISITANTE]
+   │                       │                            │                     │
+   │ 1. Crear workflow      │                            │                     │
+   │ 2. Crear etapa         │                            │                     │
+   │ 3. Crear 3 pasos       │                            │                     │
+   │ 4. Asignar usuarios    │                            │                     │
+   │    codRol: 2/3/5       │                            │                     │
+   │                       │                            │                     │
+   │                       │ 5. Login                   │                     │
+   │                       │ 5b. Ver entidades activas  │                     │
+   │                       │ 5c. Ver workflows activos  │                     │
+   │                       │ 6. Iniciar tramite         │                     │
+   │                       │ 7. Subir doc               │                     │
+   │                       │                            │                     │
+   │                       │                       8. Ver docs            9. Ver tramites
+   │                       │                       10. Iniciar revisión   10. Ver detalle
+   │                       │                       11. Aprobar/Devolver        │
+   │                       │                            │                     │
+   │         (si devuelto) │ 12. Subsanar               │                     │
+   │                       │ 13. Reenviar               │                     │
+   │                       │                       14. Re-revisar             │
+   │                       │                       15. Aprobar                │
+   │                       │                            │                     │
+   │                       │ ← Sistema completa trámite                       │
 ```
 
 ---

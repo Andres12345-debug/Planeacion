@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/VentanillaUnica/src/modulos/privado/workflows/**)",
+      "Read(//c/VentanillaUnica/src/modulos/privado/tramites/**)",
+      "Read(//c/VentanillaUnica/src/modulos/privado/entidades/**)",
+      "Read(//c/VentanillaUnica/src/modulos/**)",
+      "Bash(grep -rn \"ValidationPipe\\\\|enableImplicitConversion\\\\|transformOptions\" \"C:\\\\VentanillaUnica\\\\src\" 2>/dev/null)",
+      "Read(//c/VentanillaUnica/src/**)",
+      "Bash(cd \"C:\\\\VentanillaUnica\" && grep -n \"class-transformer\" package.json)",
+      "Read(//c/VentanillaUnica/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\VentanillaUnica\\src\\modulos\\privado\\workflows\\dto"
+    ]
+  }
+}

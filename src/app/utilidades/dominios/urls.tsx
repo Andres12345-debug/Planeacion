@@ -10,6 +10,10 @@ export const URLS = {
     RECUPERAR_PASSWORD: "/publico/registros/recuperar-password",
     NUEVA_PASSWORD: "/publico/registros/nueva-password",
 
+    // ── Entidades ─────────────────────────────────────────────────────────────
+    ENTIDADES_TODOS: "/privado/entidades/todos",
+    ENTIDAD: (id: number) => `/privado/entidades/${id}`,
+
     // ── Workflows ─────────────────────────────────────────────────────────────
     WORKFLOWS: "/privado/workflows",
     WORKFLOW: (id: number) => `/privado/workflows/${id}`,

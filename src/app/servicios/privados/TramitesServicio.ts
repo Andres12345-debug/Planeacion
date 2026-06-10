@@ -42,6 +42,7 @@ export interface PasoDetalle {
     codDocumentoPaso: number;
     nombreDocumento: string;
     fechaCarga: string;
+    estadoValidacion?: string;
   }>;
 }
 
