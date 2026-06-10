@@ -29,6 +29,7 @@ export const URLS = {
     INICIAR_TRAMITE: (workflowId: number) => `/privado/tramites/iniciar/${workflowId}`,
 
     // ── Pasos de trámite ──────────────────────────────────────────────────────
+    PASO_INICIAR: (tId: number, pId: number) => `/privado/tramites/${tId}/pasos/${pId}/iniciar`,
     PASO_SUBSANAR: (tId: number, pId: number) => `/privado/tramites/${tId}/pasos/${pId}/subsanar`,
     PASO_REENVIAR: (tId: number, pId: number) => `/privado/tramites/${tId}/pasos/${pId}/reenviar`,
     PASO_APROBAR: (tId: number, pId: number) => `/privado/tramites/${tId}/pasos/${pId}/aprobar`,
@@ -38,4 +39,9 @@ export const URLS = {
     // ── Documentos ────────────────────────────────────────────────────────────
     DOCS_SUBIR: (tId: number, pId: number) => `/privado/tramites/${tId}/pasos/${pId}/documentos/subir`,
     DOCS_LISTAR: (tId: number, pId: number) => `/privado/tramites/${tId}/pasos/${pId}/documentos`,
+    DOCS_DESCARGAR: (tId: number, pId: number, docId: number) =>
+        `/privado/tramites/${tId}/pasos/${pId}/documentos/${docId}/descargar`,
+
+    // ── Usuarios ──────────────────────────────────────────────────────────────
+    USUARIOS_TODOS: "/privado/usuarios/todos",
 }

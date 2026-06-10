@@ -1,5 +1,6 @@
 import { ApiServicio } from "../reutilizables/ApiServicio";
 import { URLS } from "../../utilidades/dominios/urls";
+import { tokenHelper } from "../../utilidades/auth/tokenHelper";
 
 export const DocumentosServicio = {
   subir: (tramiteId: number, pasoId: number, archivo: File, descripcion?: string) => {
@@ -11,4 +12,34 @@ export const DocumentosServicio = {
 
   listar: (tramiteId: number, pasoId: number) =>
     ApiServicio.get<unknown[]>(URLS.DOCS_LISTAR(tramiteId, pasoId)),
+
+  // El endpoint devuelve el binario con Content-Disposition: attachment, así que
+  // no se puede usar un <a href> directo (necesita el header Authorization).
+  descargar: async (tramiteId: number, pasoId: number, docId: number, nombreArchivo: string) => {
+    const token = tokenHelper.get();
+    const respuesta = await fetch(URLS.URL_BASE + URLS.DOCS_DESCARGAR(tramiteId, pasoId, docId), {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!respuesta.ok) {
+      let mensaje = `Error ${respuesta.status}`;
+      try {
+        const err = await respuesta.json();
+        mensaje = err.message || mensaje;
+      } catch {
+        // sin body JSON
+      }
+      throw new Error(mensaje);
+    }
+
+    const blob = await respuesta.blob();
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement("a");
+    enlace.href = url;
+    enlace.download = nombreArchivo;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    URL.revokeObjectURL(url);
+  },
 };

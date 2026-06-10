@@ -290,11 +290,13 @@ const DashboardCiudadano: React.FC = () => {
           const esDevuelto = paso.estado === "DEVUELTO";
           const esEnSubsanacion = paso.estado === "EN_SUBSANACION";
 
-          // Ciudadano puede subir doc cuando el paso lo requiere y está activo
+          // Ciudadano puede subir doc cuando el paso lo requiere y está habilitado
+          // (el backend nunca asigna estado: "HABILITADO" — la señal real es habilitado: true,
+          // ver AUDITORIA_WORKFLOW_TRAMITES.md hallazgo #4-a)
           const necesitaDocumento =
             paso.paso.requiereDocumentos &&
             paso.habilitado &&
-            (paso.estado === "PENDIENTE" || paso.estado === "HABILITADO" || paso.estado === "EN_SUBSANACION");
+            (paso.estado === "PENDIENTE" || paso.estado === "EN_SUBSANACION");
 
           return (
             <Box

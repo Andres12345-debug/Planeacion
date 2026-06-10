@@ -20,6 +20,8 @@
 > Esto era un bloqueo real: sin estos dos catálogos, el ciudadano no tenía forma de saber **qué tipos de trámite existen** (`WORKFLOW_ID`) ni **ante qué entidad radicarlos** (`codEntidadAsignada`) para llamar a `POST /privado/tramites/iniciar/:workflowId`.
 >
 > Ver la nueva sección **["Flujo de integración Frontend — Ciudadano"](#flujo-de-integración-frontend--ciudadano)** para el recorrido completo de pantallas/endpoints.
+>
+> Además, se corrigieron varios ejemplos de respuesta que mostraban `"estado": "HABILITADO"` (un valor que el backend nunca produce — ver [`AUDITORIA_WORKFLOW_TRAMITES.md`](./AUDITORIA_WORKFLOW_TRAMITES.md) para el detalle completo de la auditoría de lógica difusa/duplicada realizada sobre estos módulos).
 
 ---
 
@@ -785,7 +787,9 @@ Authorization: Bearer {{TOKEN_FUNCIONARIO}}
 
 ### 5.3 Funcionario inicia la revisión del paso
 
-Transición: `HABILITADO → EN_REVISION`
+Precondición: el paso debe tener `habilitado: true` (lo asigna el sistema automáticamente al completarse la etapa anterior; `estado` sigue en `PENDIENTE` hasta este momento).
+
+Transición de `estado`: `PENDIENTE → EN_REVISION`
 
 ```http
 POST {{BASE_URL}}/privado/tramites/{{TRAMITE_ID}}/pasos/{{PASO_PDT_ID}}/iniciar
@@ -951,11 +955,12 @@ Content-Type: application/json
 {
   "codTramitePaso": 1,
   "codFuncionarioAsignado": 6,
-  "estado": "HABILITADO"
+  "estado": "PENDIENTE",
+  "habilitado": true
 }
 ```
 
-> Una vez asignado, solo Laura (cod_usuario: 6) puede actuar sobre ese paso. Otros funcionarios del mismo departamento recibirán 403.
+> `asignarFuncionario` solo cambia `codFuncionarioAsignado`; no modifica `estado` ni `habilitado` del paso (se muestran arriba con sus valores previos, sin cambios). Una vez asignado, solo Laura (cod_usuario: 6) puede actuar sobre ese paso. Otros funcionarios del mismo departamento recibirán 403.
 
 ---
 
@@ -1045,7 +1050,7 @@ Authorization: Bearer {{TOKEN_FUNCIONARIO}}
     },
     {
       "codTramitePaso": 2,
-      "estado": "HABILITADO",
+      "estado": "PENDIENTE",
       "habilitado": true,
       "paso": { "codigo": "VERIF-PLANOS-001", "nombre": "Verificación técnica de planos" }
     },
@@ -1102,7 +1107,7 @@ Authorization: Bearer {{TOKEN_FUNCIONARIO}}
   {
     "codEvento": 4,
     "tipoEvento": "INICIO_REVISION",
-    "estadoAnterior": "HABILITADO",
+    "estadoAnterior": "PENDIENTE",
     "estadoNuevo": "EN_REVISION",
     "codUsuario": 6,
     "rol": "funcionario",
@@ -1169,17 +1174,22 @@ EN_PROCESO → CANCELADO   (ciudadano cancela)
 
 ### Estado de cada paso
 
+`estado` (campo `TramitePaso.estado`) y `habilitado` (campo booleano independiente) son **dos cosas distintas**:
+
+- `habilitado: true/false` — lo gestiona el sistema automáticamente (`habilitarPasosDisponibles`) cuando se completa la etapa anterior. Indica si el paso está disponible para que alguien actúe sobre él **ahora mismo**. No es un valor de `estado`.
+- `estado` — solo cambia mediante las acciones de la API (`iniciar`, `aprobar`, `devolver`, `subsanar`, `reenviar`).
+
 ```
-PENDIENTE
-    └→ HABILITADO          (sistema habilita al completar etapa anterior)
-         └→ EN_REVISION    (funcionario inicia revisión)
-              ├→ APROBADO  (funcionario aprueba)
-              │    └→ CERRADO  (cierre automático)
-              └→ DEVUELTO  (funcionario devuelve)
-                   └→ EN_SUBSANACION  (ciudadano confirma subsanación)
-                        └→ REENVIADO (ciudadano reenvía)
-                             └→ EN_REVISION (vuelve a revisión)
+PENDIENTE  (habilitado: false → true cuando se completa la etapa anterior)
+    └→ EN_REVISION    (funcionario ejecuta POST /iniciar, requiere habilitado: true)
+         ├→ APROBADO  (funcionario aprueba; habilitado pasa a false)
+         └→ DEVUELTO  (funcionario devuelve; habilitado pasa a false)
+              └→ EN_SUBSANACION  (ciudadano confirma subsanación; habilitado: true)
+                   └→ REENVIADO (ciudadano reenvía; habilitado: true)
+                        └→ EN_REVISION (vuelve a revisión)
 ```
+
+> `RECHAZADO` y `CERRADO` existen en `EstadoPasoEnum` y en la tabla de transiciones interna, pero **ningún endpoint los asigna actualmente** (no hay acción "rechazar paso" ni "cerrar paso" implementada). No deben aparecer en respuestas reales todavía.
 
 ### Reglas de acceso por rol
 

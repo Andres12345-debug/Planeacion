@@ -21,6 +21,8 @@ export interface TramiteResumen {
   estado: EstadoTramite;
   progreso: number;
   fechaCreacion: string;
+  usuarioCreador?: { nombreUsuario: string };
+  entidadAsignada?: { nombreEntidad: string };
 }
 
 export interface PasoDetalle {
