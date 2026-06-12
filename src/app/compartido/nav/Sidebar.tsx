@@ -30,8 +30,9 @@ import {
   HomeWork as BrandIcon,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import { tokenHelper } from "../../utilidades/auth/tokenHelper";
+import { useUsuarioToken } from "../../utilidades/auth/usuarioToken";
+import { ROL_CONFIG } from "../../utilidades/dominios/roles";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -39,11 +40,6 @@ const DRAWER_WIDTH = 268;
 const COLLAPSED_WIDTH = 68;
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
-
-interface TokenPayload {
-  name: string;
-  nombre_rol: string;
-}
 
 interface SubItem {
   label: string;
@@ -106,23 +102,7 @@ const MENUS_POR_ROL: Record<string, MenuItem[]> = {
   visitante: MENU_VISITANTE,
 };
 
-// ── Colores por rol ───────────────────────────────────────────────────────────
-
-const ROL_CONFIG: Record<string, { label: string; color: string }> = {
-  admin:       { label: "Administrador", color: "#f59e0b" },
-  supervisor:  { label: "Supervisor",    color: "#14b8a6" },
-  funcionario: { label: "Funcionario",   color: "#3b82f6" },
-  ciudadano:   { label: "Ciudadano",     color: "#8b5cf6" },
-  visitante:   { label: "Visitante",     color: "#64748b" },
-};
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function useUsuario() {
-  const token = tokenHelper.get();
-  if (!token) return null;
-  try { return jwtDecode<TokenPayload>(token); } catch { return null; }
-}
 
 function iniciales(nombre: string) {
   return nombre.split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase();
@@ -144,7 +124,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, collapsed, setCollapse
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate  = useNavigate();
   const location  = useLocation();
-  const usuario   = useUsuario();
+  const usuario   = useUsuarioToken();
 
   const menu = useMemo<MenuItem[]>(
     () => MENUS_POR_ROL[usuario?.nombre_rol ?? ""] ?? MENU_CIUDADANO,

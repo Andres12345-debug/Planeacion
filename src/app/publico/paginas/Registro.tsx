@@ -9,25 +9,16 @@ import {
   ToggleButtonGroup,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 
 import { AccesoServicio } from "../../servicios/publicos/AccesoServicio";
 import { crearMensaje } from "../../utilidades/funciones/mensaje";
 import { tokenHelper } from "../../utilidades/auth/tokenHelper";
+import { decodeToken } from "../../utilidades/auth/usuarioToken";
 import { FormCard } from "../../compartido/ui/FormCard";
 import { CampoTexto } from "../../compartido/ui/CampoTexto";
 import { BotonPrincipal } from "../../compartido/ui/BotonPrincipal";
 
 type TipoPersona = "NATURAL" | "JURIDICA";
-
-interface TokenPayload {
-  sub: number;
-  name: string;
-  nombre_rol: string;
-  cod_entidad: number | null;
-  cod_departamento: number | null;
-  exp?: number;
-}
 
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -112,7 +103,8 @@ const Registro = () => {
       const respuesta = await AccesoServicio.registrarUsuario(payload);
       const token = respuesta?.token;
       if (!token) throw new Error("TOKEN_NOT_FOUND");
-      const datosToken = jwtDecode<TokenPayload>(token);
+      const datosToken = decodeToken(token);
+      if (!datosToken) throw new Error("TOKEN_INVALIDO");
       tokenHelper.set(token);
       crearMensaje("success", `¡Cuenta creada! Bienvenido, ${datosToken.name}`);
       navigate("/dashboard", { replace: true });

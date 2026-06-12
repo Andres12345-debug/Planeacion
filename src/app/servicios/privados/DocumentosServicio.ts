@@ -1,4 +1,4 @@
-import { ApiServicio } from "../reutilizables/ApiServicio";
+import { ApiServicio, parsearError } from "../reutilizables/ApiServicio";
 import { URLS } from "../../utilidades/dominios/urls";
 import { tokenHelper } from "../../utilidades/auth/tokenHelper";
 
@@ -22,14 +22,7 @@ export const DocumentosServicio = {
     });
 
     if (!respuesta.ok) {
-      let mensaje = `Error ${respuesta.status}`;
-      try {
-        const err = await respuesta.json();
-        mensaje = err.message || mensaje;
-      } catch {
-        // sin body JSON
-      }
-      throw new Error(mensaje);
+      throw new Error(await parsearError(respuesta));
     }
 
     const blob = await respuesta.blob();

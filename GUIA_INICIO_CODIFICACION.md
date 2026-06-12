@@ -23,11 +23,11 @@ admin crea Workflow (etapas + pasos)
 
 Esto cubre exactamente las Fases 0-8 de `GUIA_WORKFLOW_POSTMAN.md`. **No hace falta ningún desarrollo nuevo para correr ese script E2E.**
 
-Quedan **3 categorías de gaps** que no bloquean el flujo principal pero conviene resolver antes/durante las pruebas. Están ordenados por esfuerzo (de menor a mayor):
+Quedan **2 gaps pendientes** que no bloquean el flujo principal pero conviene resolver antes/durante las pruebas. Están ordenados por esfuerzo (de menor a mayor):
 
 | Prioridad | Tema | Esfuerzo | Bloquea el flujo principal |
 |---|---|---|---|
-| **P0** | Enlaces muertos en el `Sidebar` (404 visibles en QA) | Bajo (config de menú/rutas) | No |
+| ~~P0~~ | ~~Enlaces muertos en el `Sidebar`~~ — ✅ resuelto (2026-06-12) | — | — |
 | **P1** | Edición/eliminación de Workflow, Etapas y Pasos existentes | Medio (UI nueva) | No |
 | **P2** | Eliminar documento de un trámite | Bajo-Medio (1 endpoint nuevo + botón) | No |
 
@@ -50,51 +50,14 @@ Quedan **3 categorías de gaps** que no bloquean el flujo principal pero convien
 
 ---
 
-## 3. P0 — Enlaces muertos en el Sidebar
+## 3. P0 — Enlaces muertos en el Sidebar (✅ resuelto, 2026-06-12)
 
-Archivo: [`src/app/compartido/nav/Sidebar.tsx`](./src/app/compartido/nav/Sidebar.tsx). Rutas: [`src/ruteo/RuteoPrincipal.tsx`](./src/ruteo/RuteoPrincipal.tsx).
+`Sidebar.tsx` ya no tiene ítems que apunten a rutas inexistentes:
 
-Estos ítems del menú navegan a rutas que **no existen** en `RuteoPrincipal.tsx` y caen en el catch-all `<Route path="/dashboard/*" element={<Error />} />` (404):
+- `MENU_CIUDADANO` se redujo a un único ítem ("Inicio") — `DashboardCiudadano.tsx` ya cubre "Mis trámites" e "Iniciar trámite" en una sola pantalla, el submenú era redundante y solo generaba 404.
+- `MENU_SUPERVISOR`/`MENU_FUNCIONARIO` se redujeron a "Inicio" + "Trámites" — se quitaron "Asignaciones" y "Agregar funcionario" (no tenían ruta ni pantalla construida).
 
-| Ítem del menú | Rol | Ruta destino | ¿Existe la ruta? |
-|---|---|---|---|
-| "Mis trámites" ([Sidebar.tsx:105](./src/app/compartido/nav/Sidebar.tsx#L105)) | `ciudadano` | `/dashboard/tramites` | ❌ (solo routeada para `funcionario\|supervisor\|visitante`) |
-| "Iniciar trámite" ([Sidebar.tsx:106](./src/app/compartido/nav/Sidebar.tsx#L106)) | `ciudadano` | `/dashboard/tramites/nuevo` | ❌ |
-| "Asignaciones" ([Sidebar.tsx:91](./src/app/compartido/nav/Sidebar.tsx#L91), [Sidebar.tsx:97](./src/app/compartido/nav/Sidebar.tsx#L97)) | `supervisor`, `funcionario` | `/dashboard/asignaciones` | ❌ |
-| "Agregar funcionario" ([Sidebar.tsx:89](./src/app/compartido/nav/Sidebar.tsx#L89)) | `supervisor` | `/dashboard/supervisor/usuarios/crear` | ❌ |
-
-### Fix recomendado para "Mis trámites" / "Iniciar trámite" (ciudadano)
-
-`DashboardCiudadano.tsx` ya vive en `/dashboard` y cubre **ambas** funciones (lista de trámites activos + tarjetas para iniciar uno nuevo) en una sola pantalla. El submenú es redundante y solo genera 404. Eliminar el submenú completo de `MENU_CIUDADANO`:
-
-```ts
-// Antes (Sidebar.tsx:100-109)
-const MENU_CIUDADANO: MenuItem[] = [
-  { label: "Inicio", icon: <DashboardIcon />, path: "/dashboard" },
-  {
-    label: "Trámites", icon: <TramitesIcon />, seccion: "Mis gestiones",
-    children: [
-      { label: "Mis trámites",   path: "/dashboard/tramites" },
-      { label: "Iniciar trámite", path: "/dashboard/tramites/nuevo" },
-    ],
-  },
-];
-
-// Después
-const MENU_CIUDADANO: MenuItem[] = [
-  { label: "Inicio", icon: <DashboardIcon />, path: "/dashboard" },
-];
-```
-
-### Fix recomendado para "Asignaciones" (supervisor / funcionario) y "Agregar funcionario" (supervisor)
-
-Estos dos eran un gap **preexistente**, ya documentado como fuera de alcance en la guía de gestión de trámites (ver [`HISTORIAL_CAMBIOS_WORKFLOW.md` §6](./HISTORIAL_CAMBIOS_WORKFLOW.md)). Opciones, de menor a mayor esfuerzo:
-
-1. **Quick fix para pruebas**: quitar estos 2 ítems del `MENU_SUPERVISOR`/`MENU_FUNCIONARIO` hasta que se decida si se van a construir.
-2. **"Agregar funcionario"** → ya existe [`UsuariosCrear.tsx`](./src/app/privado/admin/usuarios/UsuariosCrear.tsx) y solo está routeado para `admin`. Si el backend permite que `supervisor` cree usuarios de su propio departamento (verificar `usuarios.controller.ts` → `POST /privado/usuarios/agregar` y su `@Roles(...)`), bastaría con: agregar `<Route path="/dashboard/supervisor/usuarios/crear" element={<UsuariosCrear />} />` dentro de un `<GuardiaRol rolesPermitidos={["supervisor"]} />`.
-3. **"Asignaciones"** — no hay pantalla ni patrón claro de qué debería mostrar (¿reasignar funcionario a pasos pendientes de su departamento?). Requiere definir alcance antes de construir; no es un simple "agregar ruta".
-
-> Recomendación para esta ronda de pruebas: aplicar la opción 1 (ocultar los 3 ítems sin ruta) para que QA no vea 404 navegando el menú, y dejar la decisión de construir "Asignaciones"/"Agregar funcionario (supervisor)" para una iteración posterior.
+Pantallas "Asignaciones" y "Agregar funcionario (supervisor)" siguen sin construirse — quedaron fuera de alcance, no bloquean las pruebas (ver [`HISTORIAL_CAMBIOS_WORKFLOW.md` §6](./HISTORIAL_CAMBIOS_WORKFLOW.md)).
 
 ---
 
@@ -159,7 +122,7 @@ El frontend **no tiene** esta acción: falta `URLS.DOCS_ELIMINAR`, `DocumentosSe
 
 ## 6. Orden recomendado de trabajo
 
-1. **P0** (≈30 min): ajustar `Sidebar.tsx` para eliminar/ocultar los 4 enlaces muertos. Verificar visualmente con cada rol que el menú no tenga ítems que lleven a 404.
+1. ~~**P0**~~ — ✅ resuelto, `Sidebar.tsx` ya no tiene enlaces muertos.
 2. **Lanzar pruebas E2E** siguiendo `GUIA_WORKFLOW_POSTMAN.md` (Fases 0-8) — el flujo principal ya está completo, este es el momento de detectar regresiones reales.
 3. **P2** (≈1-2 h): agregar eliminación de documentos — es autocontenido y de bajo riesgo.
 4. **P1** (≈3-5 h): UI de edición/eliminación de workflow/etapas/pasos — más esfuerzo, no bloquea pruebas, se puede hacer en paralelo o después.

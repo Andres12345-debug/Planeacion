@@ -16,16 +16,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DownloadIcon from "@mui/icons-material/Download";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import { jwtDecode } from "jwt-decode";
-import { tokenHelper } from "../utilidades/auth/tokenHelper";
-
-interface TokenPayload {
-  sub: number;
-  name: string;
-  nombre_rol: string;
-  cod_entidad: number | null;
-  cod_departamento: number | null;
-}
+import { useUsuarioToken } from "../utilidades/auth/usuarioToken";
+import { ROL_CONFIG } from "../utilidades/dominios/roles";
 
 export type ProcessItem = {
   id: string | number;
@@ -35,24 +27,6 @@ export type ProcessItem = {
   status?: "completed" | "in_progress" | "pending";
   updatedAt?: string;
   icon?: React.ReactNode;
-};
-
-function useUsuarioJWT() {
-  const token = tokenHelper.get();
-  if (!token) return null;
-  try {
-    return jwtDecode<TokenPayload>(token);
-  } catch {
-    return null;
-  }
-}
-
-const ETIQUETAS_ROL: Record<string, string> = {
-  admin: "Administrador",
-  supervisor: "Supervisor",
-  funcionario: "Funcionario",
-  ciudadano: "Ciudadano",
-  visitante: "Visitante",
 };
 
 export default function ProfileSection({
@@ -67,7 +41,7 @@ export default function ProfileSection({
   onEditProfile?: () => void;
 }) {
   const theme = useTheme();
-  const usuario = useUsuarioJWT();
+  const usuario = useUsuarioToken();
 
   const statusToColor = (s?: ProcessItem["status"]) => {
     switch (s) {
@@ -128,7 +102,7 @@ export default function ProfileSection({
               {usuario?.name ?? "—"}
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
-              {usuario ? (ETIQUETAS_ROL[usuario.nombre_rol] ?? usuario.nombre_rol) : "—"}
+              {usuario ? (ROL_CONFIG[usuario.nombre_rol]?.label ?? usuario.nombre_rol) : "—"}
             </Typography>
 
             <Box sx={{ mt: 2, display: "flex", gap: 1 }}>

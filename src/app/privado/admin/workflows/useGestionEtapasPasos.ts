@@ -7,22 +7,47 @@ import {
   CanalPaso,
 } from "../../../servicios/privados/WorkflowServicio";
 import { DepartamentosServicio, Departamento } from "../../../servicios/privados/DepartamentosServicio";
+import { EntidadesServicio, Entidad } from "../../../servicios/privados/EntidadesServicio";
+import { UsuariosServicio, UsuarioResumen } from "../../../servicios/privados/UsuariosServicio";
+import { ROLES_RESPONSABLES_ETAPA } from "../../../utilidades/dominios/roles";
 import { crearMensaje } from "../../../utilidades/funciones/mensaje";
 
 // ── Tipos de formulario locales ───────────────────────────────────────────────
 
-export interface FormEtapa { nombre: string; codDepartamentoResponsable: string; descripcion: string }
+export interface FormEtapa {
+  nombre: string;
+  codEntidadResponsable: string;
+  codDepartamentoResponsable: string;
+  codFuncionarioResponsable: string;
+  descripcion: string;
+}
 export interface FormPaso {
   codigo: string; nombre: string; descripcion: string;
   canal: CanalPaso; slaDias: string;
   requiereDocumentos: boolean; permiteSubsanacion: boolean; visibleCiudadano: boolean;
 }
 
-export const E0: FormEtapa = { nombre: "", codDepartamentoResponsable: "", descripcion: "" };
+export const E0: FormEtapa = {
+  nombre: "",
+  codEntidadResponsable: "",
+  codDepartamentoResponsable: "",
+  codFuncionarioResponsable: "",
+  descripcion: "",
+};
 export const P0: FormPaso  = {
   codigo: "", nombre: "", descripcion: "", canal: "VIRTUAL", slaDias: "5",
   requiereDocumentos: false, permiteSubsanacion: true, visibleCiudadano: true,
 };
+
+// ── Mensajes de formularios sin guardar ──────────────────────────────────────
+// Compartidos entre WorkflowCrear y WorkflowEditar (cada uno usa una acción
+// distinta para el cierre de la frase: "continuar", "finalizar", "salir").
+
+export const mensajeEtapaSinGuardar = (accion: string) =>
+  `Tienes datos de una etapa sin guardar. Presiona "+ Agregar Etapa" para guardarla, o borra el formulario antes de ${accion}.`;
+
+export const mensajePasoSinGuardar = (accion: string) =>
+  `Tienes datos de un paso sin guardar. Presiona "+ Agregar Paso a esta Etapa" para guardarlo, o borra el formulario antes de ${accion}.`;
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 // Estado y handlers compartidos para gestionar etapas y sus pasos de un workflow,
@@ -35,10 +60,26 @@ export function useGestionEtapasPasos(workflow: WorkflowCreado | null) {
   const [formsP, setFormsP] = useState<Record<number, FormPaso>>({});
   const [pasosPorEtapa, setPasosPorEtapa] = useState<Record<number, PasoCreado[]>>({});
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
+  const [entidades, setEntidades] = useState<Entidad[]>([]);
+  const [usuarios, setUsuarios] = useState<UsuarioResumen[]>([]);
 
   useEffect(() => {
     DepartamentosServicio.listar()
       .then((data) => setDepartamentos(data.filter((d) => d.estado)))
+      .catch((e) => crearMensaje("error", (e as Error).message));
+
+    EntidadesServicio.listar()
+      .then((data) => setEntidades(data.filter((e) => e.estado)))
+      .catch((e) => crearMensaje("error", (e as Error).message));
+
+    UsuariosServicio.listar()
+      .then((data) =>
+        setUsuarios(
+          data.filter((u) =>
+            ROLES_RESPONSABLES_ETAPA.includes(u.nombre_rol as (typeof ROLES_RESPONSABLES_ETAPA)[number])
+          )
+        )
+      )
       .catch((e) => crearMensaje("error", (e as Error).message));
   }, []);
 
@@ -46,9 +87,19 @@ export function useGestionEtapasPasos(workflow: WorkflowCreado | null) {
     departamentos.find((d) => d.codDepartamento === codDepartamento)?.nombreDepartamento
     ?? `Dpto. #${codDepartamento}`;
 
+  const departamentosPorEntidad = (codEntidad: number) =>
+    departamentos.filter((d) => d.codEntidad === codEntidad);
+
+  const funcionariosPorDepartamento = (codDepartamento: number) =>
+    usuarios.filter((u) => u.cod_departamento === codDepartamento);
+
+  const nombreFuncionario = (codUsuario: number) =>
+    usuarios.find((u) => u.cod_usuario === codUsuario)?.nombre_usuario
+    ?? `Usuario #${codUsuario}`;
+
   const handleAgregarEtapa = async () => {
-    if (!formE.nombre.trim() || !formE.codDepartamentoResponsable) {
-      crearMensaje("warning", "El nombre y el departamento responsable son obligatorios");
+    if (!formE.nombre.trim() || !formE.codEntidadResponsable || !formE.codDepartamentoResponsable) {
+      crearMensaje("warning", "El nombre, la entidad y el departamento responsable son obligatorios");
       return;
     }
     if (!workflow) return;
@@ -56,7 +107,11 @@ export function useGestionEtapasPasos(workflow: WorkflowCreado | null) {
     try {
       const etapa = await WorkflowServicio.crearEtapa(workflow.codWorkflow, {
         nombre: formE.nombre.trim(),
+        codEntidadResponsable: Number(formE.codEntidadResponsable),
         codDepartamentoResponsable: Number(formE.codDepartamentoResponsable),
+        ...(formE.codFuncionarioResponsable
+          ? { codFuncionarioResponsable: Number(formE.codFuncionarioResponsable) }
+          : {}),
         ...(formE.descripcion.trim() ? { descripcion: formE.descripcion.trim() } : {}),
         orden: etapas.length + 1,
       });
@@ -85,7 +140,9 @@ export function useGestionEtapasPasos(workflow: WorkflowCreado | null) {
 
   const hayEtapaSinGuardar = () =>
     formE.nombre.trim() !== "" ||
+    formE.codEntidadResponsable !== "" ||
     formE.codDepartamentoResponsable !== "" ||
+    formE.codFuncionarioResponsable !== "" ||
     formE.descripcion.trim() !== "";
 
   const hayPasoSinGuardar = () =>
@@ -135,7 +192,12 @@ export function useGestionEtapasPasos(workflow: WorkflowCreado | null) {
     etapas, setEtapas,
     pasosPorEtapa, setPasosPorEtapa,
     departamentos,
+    entidades,
+    usuarios,
     nombreDepartamento,
+    departamentosPorEntidad,
+    funcionariosPorDepartamento,
+    nombreFuncionario,
     handleAgregarEtapa,
     getP, setP,
     handleAgregarPaso,

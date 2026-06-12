@@ -33,53 +33,26 @@ import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import AssignmentReturnIcon from "@mui/icons-material/AssignmentReturn";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
-import { jwtDecode } from "jwt-decode";
 
-import { TramitesServicio, TramiteResumen, TramiteDetalle, EstadoTramite, EstadoPaso, PasoDetalle } from "../../servicios/privados/TramitesServicio";
+import { TramitesServicio, TramiteResumen, TramiteDetalle, EstadoTramite, PasoDetalle } from "../../servicios/privados/TramitesServicio";
 import { PasosServicio } from "../../servicios/privados/PasosServicio";
 import { DocumentosServicio } from "../../servicios/privados/DocumentosServicio";
 import { UsuariosServicio, UsuarioResumen } from "../../servicios/privados/UsuariosServicio";
-import { tokenHelper } from "../../utilidades/auth/tokenHelper";
+import { useUsuarioToken } from "../../utilidades/auth/usuarioToken";
+import { ESTADO_TRAMITE, ESTADO_PASO } from "../../utilidades/dominios/estadosTramite";
+import { ROLES_EJECUTORES_PASO } from "../../utilidades/dominios/roles";
 import { crearMensaje } from "../../utilidades/funciones/mensaje";
 import { FormSeccion } from "../../compartido/ui/FormSeccion";
 import { CampoTexto } from "../../compartido/ui/CampoTexto";
 import { BotonPrincipal } from "../../compartido/ui/BotonPrincipal";
 
-// ── Constantes de display ─────────────────────────────────────────────────────
-
-const ESTADO_TRAMITE: Record<EstadoTramite, { label: string; color: "info" | "success" | "error" | "default" }> = {
-  EN_PROCESO: { label: "En proceso", color: "info" },
-  COMPLETADO: { label: "Completado", color: "success" },
-  ANULADO:    { label: "Anulado",    color: "error" },
-  CANCELADO:  { label: "Cancelado",  color: "default" },
-};
-
-const ESTADO_PASO: Record<EstadoPaso, { label: string; color: "default" | "primary" | "info" | "success" | "error" | "warning" | "secondary" }> = {
-  PENDIENTE:       { label: "Pendiente",        color: "default" },
-  HABILITADO:      { label: "Habilitado",       color: "primary" },
-  EN_REVISION:     { label: "En revisión",      color: "info" },
-  APROBADO:        { label: "Aprobado",          color: "success" },
-  DEVUELTO:        { label: "Devuelto",          color: "error" },
-  EN_SUBSANACION:  { label: "En subsanación",   color: "warning" },
-  REENVIADO:       { label: "Reenviado",         color: "secondary" },
-  CERRADO:         { label: "Cerrado",           color: "success" },
-};
-
-type PasoRef = { tramiteId: number; pasoId: number; nombre: string };
-
-// ── Hook: usuario del JWT ─────────────────────────────────────────────────────
-
-function useUsuarioJWT() {
-  const token = tokenHelper.get();
-  if (!token) return null;
-  try { return jwtDecode<{ name: string; nombre_rol: string }>(token); } catch { return null; }
-}
+type PasoRef = { tramiteId: number; pasoId: number; nombre: string; codDepartamentoResponsable?: number };
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
 const DashboardGestionTramites: React.FC = () => {
   const theme = useTheme();
-  const usuario = useUsuarioJWT();
+  const usuario = useUsuarioToken();
   const rol = usuario?.nombre_rol ?? "";
 
   const puedeActuar = rol === "funcionario" || rol === "supervisor" || rol === "admin";
@@ -113,6 +86,7 @@ const DashboardGestionTramites: React.FC = () => {
   // Dialog: asignar funcionario
   const [pasoAsignar, setPasoAsignar]           = useState<PasoRef | null>(null);
   const [funcionarios, setFuncionarios]         = useState<UsuarioResumen[]>([]);
+  const [todosFuncionarios, setTodosFuncionarios] = useState<UsuarioResumen[]>([]);
   const [cargandoF, setCargandoF]               = useState(false);
   const [funcionarioSeleccionado, setFuncionarioSeleccionado] = useState<number | "">("");
   const [asignando, setAsignando]               = useState(false);
@@ -214,17 +188,28 @@ const DashboardGestionTramites: React.FC = () => {
   const abrirAsignar = async (ref: PasoRef) => {
     setPasoAsignar(ref);
     setFuncionarioSeleccionado("");
-    if (funcionarios.length === 0) {
+
+    let lista = todosFuncionarios;
+    if (lista.length === 0) {
       setCargandoF(true);
       try {
-        const res = await UsuariosServicio.listar();
-        setFuncionarios(res.filter((u) => u.nombre_rol === "funcionario"));
+        lista = await UsuariosServicio.listar();
+        setTodosFuncionarios(lista);
       } catch (e) {
         crearMensaje("error", (e as Error).message);
-      } finally {
         setCargandoF(false);
+        return;
       }
+      setCargandoF(false);
     }
+
+    setFuncionarios(
+      lista.filter(
+        (u) =>
+          ROLES_EJECUTORES_PASO.includes(u.nombre_rol as (typeof ROLES_EJECUTORES_PASO)[number]) &&
+          u.cod_departamento === ref.codDepartamentoResponsable
+      )
+    );
   };
 
   const confirmarAsignar = async () => {
@@ -275,10 +260,16 @@ const DashboardGestionTramites: React.FC = () => {
         {detalle.pasos.map((paso, idx) => {
           const cfg = ESTADO_PASO[paso.estado] ?? { label: paso.estado, color: "default" as const };
 
-          const puedeIniciar = puedeActuar && paso.habilitado &&
+          const esMiPaso = rol !== "funcionario" || paso.codFuncionarioAsignado === usuario?.sub;
+          // Un supervisor solo actúa sobre pasos de su propio departamento
+          // (igual que validateAccion/puedeAsignarFuncionario en el backend).
+          // Admin no tiene esta restricción.
+          const enMiDepartamento = rol !== "supervisor" || paso.codDepartamentoResponsable === usuario?.cod_departamento;
+
+          const puedeIniciar = puedeActuar && esMiPaso && enMiDepartamento && paso.habilitado &&
             (paso.estado === "PENDIENTE" || paso.estado === "REENVIADO");
-          const puedeRevisar = puedeActuar && paso.estado === "EN_REVISION";
-          const puedeAsignarPaso = puedeAsignar && paso.estado !== "APROBADO";
+          const puedeRevisar = puedeActuar && esMiPaso && enMiDepartamento && paso.estado === "EN_REVISION";
+          const puedeAsignarPaso = puedeAsignar && enMiDepartamento && paso.estado !== "APROBADO";
 
           return (
             <Box
@@ -351,6 +342,16 @@ const DashboardGestionTramites: React.FC = () => {
                     sx={{ fontWeight: 600, fontSize: "0.65rem", flexShrink: 0 }}
                   />
                 ) : null}
+
+                {paso.codFuncionarioAsignado ? (
+                  <Chip
+                    label={paso.codFuncionarioAsignado === usuario?.sub ? "Asignado a ti" : "Asignado"}
+                    size="small"
+                    variant="outlined"
+                    color={paso.codFuncionarioAsignado === usuario?.sub ? "secondary" : "default"}
+                    sx={{ fontWeight: 600, fontSize: "0.65rem", flexShrink: 0 }}
+                  />
+                ) : null}
               </Box>
 
               {/* Acciones */}
@@ -399,7 +400,7 @@ const DashboardGestionTramites: React.FC = () => {
                       size="small"
                       variant="outlined"
                       color="secondary"
-                      onClick={() => abrirAsignar({ tramiteId: codTramite, pasoId: paso.codTramitePaso, nombre: paso.paso.nombre })}
+                      onClick={() => abrirAsignar({ tramiteId: codTramite, pasoId: paso.codTramitePaso, nombre: paso.paso.nombre, codDepartamentoResponsable: paso.codDepartamentoResponsable })}
                       sx={{ textTransform: "none", fontSize: "0.75rem", py: 0.25 }}
                     >
                       <PersonAddAltIcon sx={{ fontSize: "0.9rem", mr: 0.5 }} />
@@ -734,7 +735,7 @@ const DashboardGestionTramites: React.FC = () => {
             value={funcionarioSeleccionado}
             onChange={(e) => setFuncionarioSeleccionado(Number(e.target.value))}
             disabled={cargandoF || funcionarios.length === 0}
-            helperText={!cargandoF && funcionarios.length === 0 ? "No hay funcionarios disponibles en tu entidad" : undefined}
+            helperText={!cargandoF && funcionarios.length === 0 ? "No hay funcionarios de este departamento disponibles" : undefined}
             sx={{ mt: 1 }}
           >
             {funcionarios.map((f) => (

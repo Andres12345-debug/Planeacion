@@ -88,18 +88,18 @@ src/
 Login / Registro
     └─ AccesoServicio → POST /publico/auth/login  (o /publico/registros/user)
            └─ Respuesta: { token, mensaje }
-                  └─ tokenHelper.setToken(token)  → sessionStorage
-                  └─ jwtDecode(token)             → lee nombre, nombre_rol, etc.
+                  └─ tokenHelper.set(token)       → sessionStorage
+                  └─ decodeToken(token)           → lee nombre, nombre_rol, etc.
                   └─ navigate("/dashboard")
 
 Rutas privadas
-    └─ <Vigilante> lee tokenHelper.getToken()
+    └─ <Vigilante> lee tokenHelper.get()
            ├─ Sin token         → redirect /login
-           ├─ Token expirado    → removeToken() + redirect /login
+           ├─ Token expirado    → tokenHelper.remove() + redirect /login
            └─ Token válido      → renderiza <Outlet />
 
 Logout (Sidebar)
-    └─ tokenHelper.removeToken() + navigate("/")
+    └─ tokenHelper.remove() + navigate("/")
 ```
 
 ---
@@ -133,7 +133,7 @@ Logout (Sidebar)
 
 ### `ApiServicio` — endpoints privados (con token automático)
 
-Métodos estáticos: `get<T>`, `post<T>`, `put<T>`, `patch<T>`, `delete<T>`. Todos leen el token con `tokenHelper.getToken()` e inyectan `Authorization: Bearer`.
+Métodos estáticos: `get<T>`, `post<T>`, `put<T>`, `patch<T>`, `delete<T>`. Todos leen el token con `tokenHelper.get()` e inyectan `Authorization: Bearer`.
 
 ---
 

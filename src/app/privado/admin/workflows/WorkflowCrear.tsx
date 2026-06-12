@@ -18,7 +18,7 @@ import { FormSeccion } from "../../../compartido/ui/FormSeccion";
 import { CampoTexto } from "../../../compartido/ui/CampoTexto";
 import { CampoSwitch } from "../../../compartido/ui/CampoSwitch";
 import { BotonPrincipal } from "../../../compartido/ui/BotonPrincipal";
-import { useGestionEtapasPasos } from "./useGestionEtapasPasos";
+import { useGestionEtapasPasos, mensajeEtapaSinGuardar, mensajePasoSinGuardar } from "./useGestionEtapasPasos";
 import { EtapasSeccion } from "./EtapasSeccion";
 import { PasosPorEtapaSeccion } from "./PasosPorEtapaSeccion";
 
@@ -41,8 +41,9 @@ const WorkflowCrear: React.FC = () => {
   const [workflow, setWF]   = useState<WorkflowCreado | null>(null);
 
   const {
-    cargando, formE, setFormE, etapas, pasosPorEtapa, departamentos,
-    nombreDepartamento, handleAgregarEtapa, getP, setP, handleAgregarPaso,
+    cargando, formE, setFormE, etapas, pasosPorEtapa, entidades,
+    nombreDepartamento, departamentosPorEntidad, funcionariosPorDepartamento, nombreFuncionario,
+    handleAgregarEtapa, getP, setP, handleAgregarPaso,
     hayEtapaSinGuardar, hayPasoSinGuardar,
   } = useGestionEtapasPasos(workflow);
 
@@ -75,10 +76,7 @@ const WorkflowCrear: React.FC = () => {
 
   const handleContinuarPasos = () => {
     if (hayEtapaSinGuardar()) {
-      crearMensaje(
-        "warning",
-        "Tienes datos de una etapa sin guardar. Presiona \"+ Agregar Etapa\" para guardarla, o borra el formulario antes de continuar."
-      );
+      crearMensaje("warning", mensajeEtapaSinGuardar("continuar"));
       return;
     }
     setPasoActivo(2);
@@ -86,10 +84,7 @@ const WorkflowCrear: React.FC = () => {
 
   const handleFinalizar = () => {
     if (hayPasoSinGuardar()) {
-      crearMensaje(
-        "warning",
-        "Tienes datos de un paso sin guardar. Presiona \"+ Agregar Paso a esta Etapa\" para guardarlo, o borra el formulario antes de finalizar."
-      );
+      crearMensaje("warning", mensajePasoSinGuardar("finalizar"));
       return;
     }
     crearMensaje("success", "Workflow configurado exitosamente");
@@ -177,8 +172,11 @@ const WorkflowCrear: React.FC = () => {
             etapas={etapas}
             formE={formE}
             setFormE={setFormE}
-            departamentos={departamentos}
+            entidades={entidades}
             nombreDepartamento={nombreDepartamento}
+            departamentosPorEntidad={departamentosPorEntidad}
+            funcionariosPorDepartamento={funcionariosPorDepartamento}
+            nombreFuncionario={nombreFuncionario}
             onAgregar={handleAgregarEtapa}
             cargando={cargando}
           />

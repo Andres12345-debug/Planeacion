@@ -14,7 +14,9 @@ export interface EtapaResumen {
   codEtapa: number;
   nombre: string;
   orden: number;
+  codEntidadResponsable: number;
   codDepartamentoResponsable: number;
+  codFuncionarioResponsable?: number;
   descripcion?: string;
   pasos?: PasoCreado[];
 }
@@ -26,7 +28,6 @@ export interface WorkflowCreado {
   descripcion?: string;
   activo: boolean;
   etapas?: EtapaResumen[];
-  pasos?: PasoCreado[];
 }
 
 export interface PaginadoWorkflows {
@@ -38,7 +39,9 @@ export interface PaginadoWorkflows {
 
 export interface CrearEtapaDto {
   nombre: string;
+  codEntidadResponsable: number;
   codDepartamentoResponsable: number;
+  codFuncionarioResponsable?: number;
   descripcion?: string;
   orden: number;
 }
@@ -60,7 +63,9 @@ export interface EtapaCreada {
   codEtapa: number;
   codWorkflow: number;
   nombre: string;
+  codEntidadResponsable: number;
   codDepartamentoResponsable: number;
+  codFuncionarioResponsable?: number;
   descripcion?: string;
   orden: number;
   entidadResponsable?: EntidadResponsable | null;

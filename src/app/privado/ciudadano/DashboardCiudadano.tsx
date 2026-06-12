@@ -31,52 +31,23 @@ import BuildIcon from "@mui/icons-material/Build";
 import SendIcon from "@mui/icons-material/Send";
 import InboxIcon from "@mui/icons-material/Inbox";
 import DescriptionIcon from "@mui/icons-material/Description";
-import { jwtDecode } from "jwt-decode";
-
-import { TramitesServicio, TramiteResumen, TramiteDetalle, EstadoTramite, EstadoPaso } from "../../servicios/privados/TramitesServicio";
+import { TramitesServicio, TramiteResumen, TramiteDetalle } from "../../servicios/privados/TramitesServicio";
 import { WorkflowServicio, WorkflowCreado } from "../../servicios/privados/WorkflowServicio";
 import { PasosServicio } from "../../servicios/privados/PasosServicio";
 import { DocumentosServicio } from "../../servicios/privados/DocumentosServicio";
 import { EntidadesServicio, Entidad } from "../../servicios/privados/EntidadesServicio";
-import { tokenHelper } from "../../utilidades/auth/tokenHelper";
+import { useUsuarioToken } from "../../utilidades/auth/usuarioToken";
+import { ESTADO_TRAMITE, ESTADO_PASO } from "../../utilidades/dominios/estadosTramite";
 import { crearMensaje } from "../../utilidades/funciones/mensaje";
 import { FormSeccion } from "../../compartido/ui/FormSeccion";
 import { CampoTexto } from "../../compartido/ui/CampoTexto";
 import { BotonPrincipal } from "../../compartido/ui/BotonPrincipal";
 
-// ── Constantes de display ─────────────────────────────────────────────────────
-
-const ESTADO_TRAMITE: Record<EstadoTramite, { label: string; color: "info" | "success" | "error" | "default" }> = {
-  EN_PROCESO: { label: "En proceso", color: "info" },
-  COMPLETADO: { label: "Completado", color: "success" },
-  ANULADO:    { label: "Anulado",    color: "error" },
-  CANCELADO:  { label: "Cancelado",  color: "default" },
-};
-
-const ESTADO_PASO: Record<EstadoPaso, { label: string; color: "default" | "primary" | "info" | "success" | "error" | "warning" | "secondary" }> = {
-  PENDIENTE:       { label: "Pendiente",        color: "default" },
-  HABILITADO:      { label: "Habilitado",       color: "primary" },
-  EN_REVISION:     { label: "En revisión",      color: "info" },
-  APROBADO:        { label: "Aprobado",          color: "success" },
-  DEVUELTO:        { label: "Devuelto",          color: "error" },
-  EN_SUBSANACION:  { label: "En subsanación",   color: "warning" },
-  REENVIADO:       { label: "Reenviado",         color: "secondary" },
-  CERRADO:         { label: "Cerrado",           color: "success" },
-};
-
-// ── Hook: usuario del JWT ─────────────────────────────────────────────────────
-
-function useUsuarioJWT() {
-  const token = tokenHelper.get();
-  if (!token) return null;
-  try { return jwtDecode<{ name: string; cod_entidad: number | null }>(token); } catch { return null; }
-}
-
 // ── Componente ────────────────────────────────────────────────────────────────
 
 const DashboardCiudadano: React.FC = () => {
   const theme = useTheme();
-  const usuario = useUsuarioJWT();
+  const usuario = useUsuarioToken();
 
   // Trámites
   const [tramites, setTramites]           = useState<TramiteResumen[]>([]);
@@ -645,14 +616,15 @@ const DashboardCiudadano: React.FC = () => {
           </Typography>
         </DialogTitle>
         <DialogContent>
-          {/* Pasos del workflow visibles para el ciudadano */}
-          {!!wfSeleccionado?.pasos?.length && (
+          {/* Pasos del workflow visibles para el ciudadano (de todas las etapas) */}
+          {!!wfSeleccionado?.etapas?.some((et) => et.pasos?.length) && (
             <Box sx={{ mb: 2 }}>
               <Typography variant="caption" color="text.secondary" fontWeight={700}>
                 PASOS DE ESTE TRÁMITE
               </Typography>
               <List dense disablePadding sx={{ mt: 0.5 }}>
-                {wfSeleccionado.pasos
+                {wfSeleccionado.etapas!
+                  .flatMap((et) => et.pasos ?? [])
                   .filter((p) => p.visibleCiudadano !== false)
                   .sort((a, b) => a.ordenVisual - b.ordenVisual)
                   .map((p) => (

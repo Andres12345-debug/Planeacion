@@ -3,6 +3,18 @@ import { URLS } from "../../utilidades/dominios/urls";
 
 type Metodo = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
+// Extrae el mensaje de error de una respuesta no-ok, con fallback al status HTTP.
+export async function parsearError(respuesta: Response): Promise<string> {
+  let mensaje = `Error ${respuesta.status}`;
+  try {
+    const err = await respuesta.json();
+    mensaje = err.message || mensaje;
+  } catch {
+    // sin body JSON
+  }
+  return mensaje;
+}
+
 async function peticion<T>(
   metodo: Metodo,
   endpoint: string,
@@ -25,14 +37,7 @@ async function peticion<T>(
   const respuesta = await fetch(URLS.URL_BASE + endpoint, opciones);
 
   if (!respuesta.ok) {
-    let mensaje = `Error ${respuesta.status}`;
-    try {
-      const err = await respuesta.json();
-      mensaje = err.message || mensaje;
-    } catch {
-      // sin body JSON
-    }
-    throw new Error(mensaje);
+    throw new Error(await parsearError(respuesta));
   }
 
   if (respuesta.status === 204) return undefined as T;

@@ -1,10 +1,6 @@
-import { jwtDecode } from "jwt-decode";
 import { Navigate, Outlet } from "react-router-dom";
 import { tokenHelper } from "../utilidades/auth/tokenHelper";
-
-interface TokenPayload {
-  nombre_rol: string;
-}
+import { decodeToken } from "../utilidades/auth/usuarioToken";
 
 interface GuardiaRolProps {
   rolesPermitidos: string[];
@@ -17,13 +13,11 @@ export const GuardiaRol = ({ rolesPermitidos }: GuardiaRolProps) => {
 
   if (!token) return <Navigate to="/login" replace />;
 
-  try {
-    const { nombre_rol } = jwtDecode<TokenPayload>(token);
-    if (!rolesPermitidos.includes(nombre_rol)) {
-      return <Navigate to="/dashboard" replace />;
-    }
-  } catch {
-    return <Navigate to="/login" replace />;
+  const decoded = decodeToken(token);
+  if (!decoded) return <Navigate to="/login" replace />;
+
+  if (!rolesPermitidos.includes(decoded.nombre_rol)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

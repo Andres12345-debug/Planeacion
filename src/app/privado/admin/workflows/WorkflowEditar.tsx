@@ -10,7 +10,7 @@ import {
 } from "../../../servicios/privados/WorkflowServicio";
 import { crearMensaje } from "../../../utilidades/funciones/mensaje";
 import { FormSeccion } from "../../../compartido/ui/FormSeccion";
-import { useGestionEtapasPasos } from "./useGestionEtapasPasos";
+import { useGestionEtapasPasos, mensajeEtapaSinGuardar, mensajePasoSinGuardar } from "./useGestionEtapasPasos";
 import { EtapasSeccion } from "./EtapasSeccion";
 import { PasosPorEtapaSeccion } from "./PasosPorEtapaSeccion";
 
@@ -23,23 +23,18 @@ const WorkflowEditar: React.FC = () => {
 
   const {
     cargando, formE, setFormE, etapas, setEtapas, pasosPorEtapa, setPasosPorEtapa,
-    departamentos, nombreDepartamento, handleAgregarEtapa, getP, setP, handleAgregarPaso,
+    entidades, nombreDepartamento, departamentosPorEntidad, funcionariosPorDepartamento,
+    nombreFuncionario, handleAgregarEtapa, getP, setP, handleAgregarPaso,
     hayEtapaSinGuardar, hayPasoSinGuardar,
   } = useGestionEtapasPasos(workflow);
 
   const handleVolver = () => {
     if (hayEtapaSinGuardar()) {
-      crearMensaje(
-        "warning",
-        "Tienes datos de una etapa sin guardar. Presiona \"+ Agregar Etapa\" para guardarla, o borra el formulario antes de salir."
-      );
+      crearMensaje("warning", mensajeEtapaSinGuardar("salir"));
       return;
     }
     if (hayPasoSinGuardar()) {
-      crearMensaje(
-        "warning",
-        "Tienes datos de un paso sin guardar. Presiona \"+ Agregar Paso a esta Etapa\" para guardarlo, o borra el formulario antes de salir."
-      );
+      crearMensaje("warning", mensajePasoSinGuardar("salir"));
       return;
     }
     navigate("/dashboard/admin/workflows");
@@ -57,7 +52,9 @@ const WorkflowEditar: React.FC = () => {
           codEtapa: et.codEtapa,
           codWorkflow: data.codWorkflow,
           nombre: et.nombre,
+          codEntidadResponsable: et.codEntidadResponsable,
           codDepartamentoResponsable: et.codDepartamentoResponsable,
+          codFuncionarioResponsable: et.codFuncionarioResponsable,
           descripcion: et.descripcion,
           orden: et.orden,
         }));
@@ -118,8 +115,11 @@ const WorkflowEditar: React.FC = () => {
             etapas={etapas}
             formE={formE}
             setFormE={setFormE}
-            departamentos={departamentos}
+            entidades={entidades}
             nombreDepartamento={nombreDepartamento}
+            departamentosPorEntidad={departamentosPorEntidad}
+            funcionariosPorDepartamento={funcionariosPorDepartamento}
+            nombreFuncionario={nombreFuncionario}
             onAgregar={handleAgregarEtapa}
             cargando={cargando}
           />

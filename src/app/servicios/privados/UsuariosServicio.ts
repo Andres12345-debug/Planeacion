@@ -12,6 +12,7 @@ export interface UsuarioResumen {
   nombre_rol: string;
   nombre_entidad?: string;
   cargo?: string;
+  cod_departamento?: number;
 }
 
 export interface CrearUsuarioPayload {

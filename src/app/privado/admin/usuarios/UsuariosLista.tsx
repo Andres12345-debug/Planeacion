@@ -33,20 +33,11 @@ import {
   UsuarioResumen,
 } from "../../../servicios/privados/UsuariosServicio";
 import { crearMensaje } from "../../../utilidades/funciones/mensaje";
+import { ROL_CONFIG } from "../../../utilidades/dominios/roles";
 import { FormSeccion } from "../../../compartido/ui/FormSeccion";
 import { CampoTexto } from "../../../compartido/ui/CampoTexto";
 import { BotonPrincipal } from "../../../compartido/ui/BotonPrincipal";
 import AsignarEntidadDialog from "./AsignarEntidadDialog";
-
-// ── Colores por rol ───────────────────────────────────────────────────────────
-
-const ROL_CONFIG: Record<string, { label: string; color: string }> = {
-  admin: { label: "Administrador", color: "#f59e0b" },
-  supervisor: { label: "Supervisor", color: "#14b8a6" },
-  funcionario: { label: "Funcionario", color: "#3b82f6" },
-  ciudadano: { label: "Ciudadano", color: "#8b5cf6" },
-  visitante: { label: "Visitante", color: "#64748b" },
-};
 
 // ── Componente de fila de skeleton ────────────────────────────────────────────
 

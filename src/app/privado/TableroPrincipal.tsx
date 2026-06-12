@@ -1,19 +1,13 @@
 import { lazy, Suspense } from "react";
 import { Box, CircularProgress } from "@mui/material";
-import { jwtDecode } from "jwt-decode";
-import { tokenHelper } from "../utilidades/auth/tokenHelper";
+import { useUsuarioToken } from "../utilidades/auth/usuarioToken";
 import ProfileSection from "./Profile";
 
 const DashboardCiudadano = lazy(() => import("./ciudadano/DashboardCiudadano"));
 
-function useRol(): string {
-  const token = tokenHelper.get();
-  if (!token) return "";
-  try { return jwtDecode<{ nombre_rol: string }>(token).nombre_rol; } catch { return ""; }
-}
-
 const TableroPrincipal = () => {
-  const rol = useRol();
+  const usuario = useUsuarioToken();
+  const rol = usuario?.nombre_rol ?? "";
 
   if (rol === "ciudadano") {
     return (

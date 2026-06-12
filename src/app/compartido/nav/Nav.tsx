@@ -203,7 +203,6 @@ export default function TopNavigation() {
             <IconButton
               component={Link}
               to="/login"
-              target="_blank"
               rel="noopener noreferrer"
               color="inherit"
               sx={{ ml: 0.5 }}

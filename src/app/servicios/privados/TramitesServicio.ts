@@ -3,16 +3,8 @@ import { URLS } from "../../utilidades/dominios/urls";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-export type EstadoTramite = "EN_PROCESO" | "COMPLETADO" | "ANULADO" | "CANCELADO";
-export type EstadoPaso =
-  | "PENDIENTE"
-  | "HABILITADO"
-  | "EN_REVISION"
-  | "APROBADO"
-  | "DEVUELTO"
-  | "EN_SUBSANACION"
-  | "REENVIADO"
-  | "CERRADO";
+export type { EstadoTramite, EstadoPaso } from "../../utilidades/dominios/estadosTramite";
+import type { EstadoTramite, EstadoPaso } from "../../utilidades/dominios/estadosTramite";
 
 export interface TramiteResumen {
   codTramite: number;
@@ -31,6 +23,7 @@ export interface PasoDetalle {
   estado: EstadoPaso;
   habilitado: boolean;
   codDepartamentoResponsable: number;
+  codFuncionarioAsignado?: number;
   numeroDevoluciones?: number;
   fechaInicio?: string;
   fechaFin?: string;

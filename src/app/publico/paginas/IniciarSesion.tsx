@@ -15,7 +15,6 @@ import {
   CloudDoneOutlined as CloudIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import ReCAPTCHA from "react-google-recaptcha";
 
 import { Login } from "../../modelos/InicioSesion";
@@ -23,18 +22,10 @@ import { AccesoServicio } from "../../servicios/publicos/AccesoServicio";
 import { useFormulario } from "../../utilidades/funciones/UsoFormulario";
 import { crearMensaje } from "../../utilidades/funciones/mensaje";
 import { tokenHelper } from "../../utilidades/auth/tokenHelper";
+import { decodeToken } from "../../utilidades/auth/usuarioToken";
 import { FormCard } from "../../compartido/ui/FormCard";
 import { CampoTexto } from "../../compartido/ui/CampoTexto";
 import { BotonPrincipal } from "../../compartido/ui/BotonPrincipal";
-
-interface TokenPayload {
-  sub: number;
-  name: string;
-  nombre_rol: string;
-  cod_entidad: number | null;
-  cod_departamento: number | null;
-  exp?: number;
-}
 
 const InicioSesion = () => {
   const [enProceso, setEnProceso] = useState(false);
@@ -60,7 +51,8 @@ const InicioSesion = () => {
       const respuesta = await AccesoServicio.iniciarSesion({ username, claveAcceso });
       const token = respuesta?.token;
       if (!token) throw new Error("TOKEN_NOT_FOUND");
-      const datosToken = jwtDecode<TokenPayload>(token);
+      const datosToken = decodeToken(token);
+      if (!datosToken) throw new Error("TOKEN_INVALIDO");
       tokenHelper.set(token);
       crearMensaje("success", `¡Bienvenido, ${datosToken.name}!`);
       navegacion("/dashboard", { replace: true });

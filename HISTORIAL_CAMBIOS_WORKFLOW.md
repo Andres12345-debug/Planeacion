@@ -1,6 +1,7 @@
 # Historial de cambios — Workflow / Trámites (Frontend)
 
 > Consolida y reemplaza: `GUIA_CAMBIOS_WORKFLOW_FRONTEND.md`, `GUIA_VERIFICACION_ETAPAS_PASOS.md`, `GUIA_GESTION_TRAMITES_FUNCIONARIO.md`, `GUIA_ASIGNAR_ENTIDAD_USUARIO.md` (todas fechadas 2026-06-10, fusionadas el 2026-06-10).
+> La sección 9 (2026-06-12) fusiona y reemplaza `GUIA_RESPONSABLES_ETAPA.md` y `PASOS_IMPLEMENTACION_RESPONSABLES_ETAPA.md` (feature ya implementada por completo).
 > Para el estado actual y los próximos pasos, ver [`GUIA_INICIO_CODIFICACION.md`](./GUIA_INICIO_CODIFICACION.md). Para el script de pruebas E2E, ver [`GUIA_WORKFLOW_POSTMAN.md`](./GUIA_WORKFLOW_POSTMAN.md).
 
 Este documento es un registro histórico de **por qué** el código quedó como está. No describe el estado pendiente — eso vive en la guía de inicio.
@@ -160,3 +161,38 @@ Estos ítems requieren decisión de producto/seguridad antes de tocar backend o 
 | 2 | Unificar `verificarAccesoFuncionario` / `puedeVerTramite` / `puedeAccederTramite` | Puede cambiar respuestas 200↔403 para funcionario/supervisor. |
 | 3 | Deprecar `/tramites/agregar`, `/update/:id`, `/delete/:id` | El frontend confirmado no los usa, sin impacto inmediato. |
 | 4 | Futuro de `RECHAZADO`/`CERRADO`/`HABILITADO` en `EstadoPasoEnum` | El frontend ya trata estos valores como "puede o no aparecer" vía `ESTADO_PASO` con fallback (`?? { label: paso.estado, color: "default" }`) — forward-compatible. |
+
+---
+
+## 9. Responsables de etapa: Entidad + Departamento + Funcionario
+
+**Problema:** una etapa solo registraba `codDepartamentoResponsable`. La entidad se calculaba al vuelo vía `departamento.entidad` (sin persistir ni validar consistencia), y no existía un "funcionario responsable por defecto": cada `TramitePaso` nuevo nacía con `codFuncionarioAsignado: null`, dependiendo de que un supervisor asignara manualmente a alguien (ver [`GUIA_CAMBIOS_ASIGNACION_FUNCIONARIO.md`](./GUIA_CAMBIOS_ASIGNACION_FUNCIONARIO.md) §"trámites huérfanos").
+
+**Diseño:** se agregaron dos columnas a `workflow_etapa`:
+
+| Campo | Tipo | Obligatorio | Significado |
+|---|---|---|---|
+| `codEntidadResponsable` | `number` | Sí | Entidad responsable de la etapa. Debe coincidir con `departamento.codEntidad` del `codDepartamentoResponsable` enviado. |
+| `codFuncionarioResponsable` | `number` | No | Supervisor/funcionario activo del departamento elegido que queda como responsable por defecto de los pasos de esta etapa. |
+
+`codEntidadResponsable` se persiste (aunque sea derivable de `departamento.codEntidad`) para habilitar la selección en cascada **Entidad → Departamento → Funcionario** en el frontend y para que el backend valide la consistencia entidad/departamento al guardar. `codFuncionarioResponsable` es opcional: si se omite, el comportamiento es idéntico al anterior (paso nace sin asignar).
+
+**Cambios:**
+- Modelo (`workflow-etapa.ts`): nuevas columnas `codEntidadResponsable` (NOT NULL, FK `entidades`, `RESTRICT`) y `codFuncionarioResponsable` (nullable, FK `usuarios`, `ON DELETE SET NULL`), con relaciones `entidad`/`funcionarioResponsable`.
+- DTOs (`crear-workflow-etapa.dto.ts` / `actualizar-workflow-etapa.dto.ts`): `codEntidadResponsable` requerido (opcional en `actualizar`), `codFuncionarioResponsable` opcional.
+- `workflows.service.ts`: nuevo `validarResponsablesEtapa()` (llamado desde `crearEtapa`/`actualizarEtapa`) — valida que `codEntidadResponsable === departamento.codEntidad`, y que `codFuncionarioResponsable` (si se envía) sea un `supervisor`/`funcionario` activo del departamento elegido.
+- `workflow-instance.service.ts` (`crearInstanciaPasos`): cada `TramitePaso` nace con `codFuncionarioAsignado: etapa.codFuncionarioResponsable ?? undefined` — si la etapa tiene funcionario responsable, el trámite ya nace asignado.
+- Frontend (`WorkflowServicio.ts`, `useGestionEtapasPasos.ts`, `EtapasSeccion.tsx`, `WorkflowEditar.tsx`): selección en cascada **Entidad → Departamento → Funcionario** al crear/editar una etapa; cambiar la entidad limpia departamento y funcionario, cambiar el departamento limpia el funcionario. El funcionario queda como "Sin asignar" si no se elige.
+
+**Riesgos / limitaciones conocidas (documentadas, no resueltas a propósito):**
+
+1. **Etapas sin `codFuncionarioResponsable`**: sin cambio de comportamiento — los trámites nacen sin `codFuncionarioAsignado`, igual que antes.
+2. **Consistencia entidad/departamento ante cambios futuros**: si más adelante se permite mover un departamento a otra entidad (`PATCH /departamentos/:id`), las etapas que ya apunten a ese departamento pueden quedar con `codEntidadResponsable` desincronizado de `departamento.codEntidad` — no hay validación retroactiva.
+3. **`codFuncionarioResponsable` y cambio de departamento del usuario**: si el funcionario responsable de una etapa cambia de departamento después, la etapa sigue apuntando a él (la FK solo aplica `SET NULL` si el usuario se elimina, no si cambia de departamento).
+4. **Snapshot no sincronizado hacia `TramitePaso`**: editar una etapa (`PUT /workflows/:id/etapas/:etapaId`) no actualiza los `TramitePaso` de trámites ya creados — es intencional, evita pisar reasignaciones manuales hechas por un supervisor vía `PasosServicio.asignarFuncionario`.
+5. **Asimetría snapshot (responsables) vs. en vivo (orden/etapa activa)**: a diferencia del punto 4, `habilitarPasosDisponibles()` consulta `workflow_etapa.orden`/`workflow_paso.ordenVisual`/`codEtapa` **en vivo** en cada transición. Reordenar un workflow o mover un paso a otra etapa con trámites activos puede cambiar retroactivamente qué pasos están habilitados — los responsables quedan fijos al crear el trámite, pero la progresión sigue la configuración vigente. Ambas asimetrías están documentadas también como comentarios inline en `workflow-instance.service.ts`.
+
+**Cómo probar:**
+
+1. **Backend (Postman)**: en `POST /privado/workflows/:id/etapas`, enviar `codEntidadResponsable` que no corresponda al `codDepartamentoResponsable` → 400. Enviar `codFuncionarioResponsable` de un usuario de otro departamento o con rol `ciudadano` → 400. Request válido → 201 con `entidadResponsable`/`funcionariosDisponibles` en la respuesta. Crear un trámite sobre una etapa con `codFuncionarioResponsable` → verificar que el `tramite_paso` nace con `cod_funcionario_asignado` ya seteado; sobre una etapa sin ese campo, sigue `NULL`.
+2. **Frontend** (`/dashboard/admin/workflows/crear` y `/editar/:id`): seleccionar entidad → el select de departamento se filtra a esa entidad; seleccionar departamento → el select de funcionario se filtra a supervisores/funcionarios de ese departamento; cambiar la entidad limpia departamento y funcionario; crear la etapa sin funcionario debe seguir funcionando (campo opcional); las etapas existentes muestran su entidad/funcionario en el tooltip del chip.
